@@ -1,21 +1,9 @@
-/* ************************************************************************** */
-/*                                                                            */
-/*                                                        :::      ::::::::   */
-/*   main.cpp                                           :+:      :+:    :+:   */
-/*                                                    +:+ +:+         +:+     */
-/*   By: eboyce-n <eboyce-n@student.42.fr>          +#+  +:+       +#+        */
-/*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2023/09/04 16:23:35 by eboyce-n          #+#    #+#             */
-/*   Updated: 2023/09/04 16:33:00 by eboyce-n         ###   ########.fr       */
-/*                                                                            */
-/* ************************************************************************** */
-
 #include <cstdio>
+
+#include "server/server.hpp"
 
 int main(int argc, char **argv)
 {
-	(void)argc;
-	(void)argv;
-	printf("FOPEN_MAX %d\n", );
+	Server server;
 	return (0);
 }
