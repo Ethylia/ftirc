@@ -1,6 +1,7 @@
 #pragma once
 
 #include <vector>
+#include <string>
 #include <poll.h>
 
 #include "common.hpp"
@@ -13,12 +14,16 @@ public:
 	Server();
 	~Server();
 
-	static bool init();
+	static bool init(uint16 port, const char* password);
 	static bool run();
+	static void shutdown();
 
 private:
 	Server(const Server& obj);
 	Server& operator=(const Server& obj);
+
+	static uint16 _port;
+	static std::string _password;
 
 	static net::Socket _asocket;
 	static Client* _newclient;
