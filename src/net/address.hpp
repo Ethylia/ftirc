@@ -11,8 +11,8 @@ namespace net
 	{
 		Address();
 
-		Address(const Address& other) = default;
-		Address& operator=(const Address& other) = default;
+		Address(const Address& other);
+		Address& operator=(const Address& other);
 
 		Address(in_addr addr, uint16 port);
 		Address(in6_addr  addr, uint16 port);
@@ -45,6 +45,6 @@ namespace net
 			sockaddr_in  v4;
 			sockaddr_in6 v6;
 			sockaddr _sa;
-		} _address = {};
+		} _address;
 	};
 }

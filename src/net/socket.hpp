@@ -17,8 +17,6 @@ namespace net
 		Socket();
 		Socket(addrfamily af, sockettype type);
 
-		Socket(const Socket& other) = delete; // Copy
-		Socket& operator=(const Socket& other) = delete;
 
 		~Socket();
 
@@ -38,16 +36,19 @@ namespace net
 		void sendto(const byte* data, uint32 size, const Address& addr);
 		ssize_t receive(void* data, uint32 size);
 		bool listen(uint32 backlog);
-		bool accept(Socket& s);
+		bool accept(const Socket& as);
 		void close();
 
 	private:
+		Socket(const Socket& other); // Copy
+		Socket& operator=(const Socket& other);
+
 		template<typename T>
 		void setoption(int option, int level, T value) const { setsockopt(_sockfd, level, option, reinterpret_cast<void*>(&value), sizeof(T)); }
 
-		int _sockfd = -1;
+		int _sockfd;
 
-		bool _bound = false;
-		bool _connected = false;
+		bool _bound;
+		bool _connected;
 	};
 }

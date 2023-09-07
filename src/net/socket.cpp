@@ -10,13 +10,14 @@
 #include <cstdio>
 #include <cerrno>
 #include <fcntl.h>
+#include <iostream>
 
 namespace net
 {
-	Socket::Socket()
+	Socket::Socket() : _sockfd(-1), _bound(false), _connected(false)
 	{
 	}
-	Socket::Socket(addrfamily af, sockettype type)
+	Socket::Socket(addrfamily af, sockettype type) : _bound(false), _connected(false)
 	{
 		create(af, type);
 	}
@@ -31,9 +32,12 @@ namespace net
 		_sockfd = socket(ADDRFAMILIES[af], SOCKTYPES[type], ((type == tcp) ? IPPROTO_TCP : IPPROTO_UDP));
 		if(_sockfd == -1)
 			return perror("socket"), false;
-		// int e = fcntl(_sockfd, F_SETFL, fcntl(_sockfd, F_GETFL, 0) | O_NONBLOCK);
-		// if(e == -1)
-		// 	return perror("fcntl"), close(), false;
+		int e = fcntl(_sockfd, F_SETFL, O_NONBLOCK);
+		if(e == -1)
+		{
+			std::cerr << "Failed to set socket to non-blocking" << std::endl;
+			return false;
+		}
 		if(af == all)
 			setoption(IPV6_V6ONLY, IPPROTO_IPV6, 0);
 		else if(af == ipv6)
@@ -108,34 +112,18 @@ namespace net
 		return false;
 	}
 
-	bool Socket::accept(Socket& s)
+	bool Socket::accept(const Socket& as)
 	{
-		if(!_bound || !valid())
+		if(!as.bound() || !as.valid())
 			return false;
 		sockaddr_storage saddrs = {};
 		sockaddr& saddr = reinterpret_cast<sockaddr&>(saddrs);
 		socklen_t len = sizeof(sockaddr_storage);
-		int fd = ::accept(_sockfd, &saddr, &len);
-		if(fd != -1)
-		{
-			s._sockfd = fd;
-			s._connected = true;
-			s._listening = false;
-			s._af = reinterpret_cast<sockaddr&>(saddr).sa_family == AF_INET ? ipv4 : ipv6;
-			s._type = tcp;
-			if(saddr.sa_family == AF_INET)
-				s._peeraddr = Address(reinterpret_cast<sockaddr_in&>(saddr).sin_addr, ntohs(reinterpret_cast<sockaddr_in&>(saddr).sin_port));
-			else if(saddr.sa_family == AF_INET6)
-				s._peeraddr = Address(reinterpret_cast<sockaddr_in6&>(saddr).sin6_addr, ntohs(reinterpret_cast<sockaddr_in6&>(saddr).sin6_port));
-			len = sizeof(sockaddr_storage);
-			getsockname(fd, reinterpret_cast<sockaddr*>(&saddrs), &len);
-			s._bound = true;
-			s._addr = Address(reinterpret_cast<sockaddr*>(&saddrs));
-			_accepting = false;
-			return true;
-		}
-		_accepting = false;
-		return false;
+		int fd = ::accept(as, &saddr, &len);
+		if(fd < 1 || len != sizeof(sockaddr_in)) // we don't support ipv6
+			return false;
+		_sockfd = fd;
+		return true;
 	}
 
 	void Socket::close()
@@ -144,6 +132,5 @@ namespace net
 		_sockfd = -1;
 		_bound = false;
 		_connected = false;
-		_listening = false;
 	}
 }

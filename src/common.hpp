@@ -5,7 +5,6 @@
 typedef unsigned int uint;
 typedef unsigned short ushort;
 typedef unsigned long ulong;
-typedef unsigned long long ulonglong;
 
 typedef int8_t  int8;
 typedef int16_t int16;

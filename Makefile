@@ -1,8 +1,13 @@
 SRC_DIR	=	src
-SRC		=	main.cpp
+SRC		=	main.cpp \
+			net/address.cpp \
+			net/socket.cpp \
+			net/net.cpp \
+			server/server.cpp \
+			server/client.cpp \
 
 OBJ_DIR	=	obj
-OBJ		=	$(SRC:.cpp=.o)
+OBJ		=	$(addprefix $(OBJ_DIR)/,$(SRC:.cpp=.o))
 
 NAME	=	ircserv
 
@@ -22,11 +27,12 @@ noerr: all
 rel: CFLAGS += -Ofast
 rel: LDFLAGS += -O1
 
-$(NAME): $(OBJ)
-	$(CC) $(LDFLAGS) -o $(NAME) $(OBJ_DIR)/$(OBJ)
+$(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp
+	@mkdir -p $(dir $@)
+	$(CC) $(CFLAGS) -c $< -o $@ -MMD
 
-%.o: %.cpp
-	$(CC) $(CFLAGS) -c $(SRC_DIR)/$< -o $(OBJ_DIR)/$@ -MMD
+$(NAME): $(OBJ)
+	$(CC) $^ -o $(NAME) $(LDFLAGS)
 
 clean:
 	@-find $(OBJ_DIR) -type f -name '*.o' -delete

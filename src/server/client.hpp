@@ -1,6 +1,6 @@
 #pragma once
 
-#include "net/sockets.hpp"
+#include "net/socket.hpp"
 
 class Client
 {
@@ -8,7 +8,9 @@ public:
 	Client();
 	~Client();
 
-	bool accept(const net::Socket& s);
+	operator const int&() const { return _socket; }
+
+	bool accept(const net::Socket& s) { return _socket.accept(s); }
 
 private:
 	net::Socket _socket;

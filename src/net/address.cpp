@@ -12,8 +12,20 @@
 namespace net
 {
 	Address::Address() :
-		_af(invalid)
+		_af(invalid), _address()
 	{
+		_port = 0;
+	}
+	Address::Address(const Address& other) :
+		_af(other._af)
+	{
+		memcpy(&_address, &other._address, SOCKSIZES[_af]);
+	}
+	Address& Address::operator=(const Address& other)
+	{
+		_af = other._af;
+		memcpy(&_address, &other._address, SOCKSIZES[_af]);
+		return *this;
 	}
 	Address::Address(in_addr addr, uint16 port) :
 		_af(ipv4)
