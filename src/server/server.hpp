@@ -18,9 +18,17 @@ public:
 	static bool run();
 	static void shutdown();
 
+	static bool accept();
+	static bool receive(uint64 id);
+	static void disconnect(uint64 id);
+
+	static time_t currenttime() { return _currenttime; }
+
 private:
 	Server(const Server& obj);
 	Server& operator=(const Server& obj);
+
+	static time_t _currenttime;
 
 	static uint16 _port;
 	static std::string _password;

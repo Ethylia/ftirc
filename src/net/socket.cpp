@@ -17,9 +17,9 @@ namespace net
 	Socket::Socket() : _sockfd(-1), _bound(false), _connected(false)
 	{
 	}
-	Socket::Socket(addrfamily af, sockettype type) : _bound(false), _connected(false)
+	Socket::Socket(sockettype type) : _bound(false), _connected(false)
 	{
-		create(af, type);
+		create(type);
 	}
 	Socket::~Socket()
 	{
@@ -27,9 +27,9 @@ namespace net
 			close();
 	}
 
-	bool Socket::create(addrfamily af, sockettype type)
+	bool Socket::create(sockettype type)
 	{
-		_sockfd = socket(ADDRFAMILIES[af], SOCKTYPES[type], ((type == tcp) ? IPPROTO_TCP : IPPROTO_UDP));
+		_sockfd = socket(ADDRFAMILIES[ipv4], SOCKTYPES[type], ((type == tcp) ? IPPROTO_TCP : IPPROTO_UDP));
 		if(_sockfd == -1)
 			return perror("socket"), false;
 		int e = fcntl(_sockfd, F_SETFL, O_NONBLOCK);
@@ -38,10 +38,6 @@ namespace net
 			std::cerr << "Failed to set socket to non-blocking" << std::endl;
 			return false;
 		}
-		if(af == all)
-			setoption(IPV6_V6ONLY, IPPROTO_IPV6, 0);
-		else if(af == ipv6)
-			setoption(IPV6_V6ONLY, IPPROTO_IPV6, 1);
 		return _sockfd != -1;
 	}
 
@@ -86,11 +82,11 @@ namespace net
 		return false;
 	}
 
-	void Socket::send(const char* data, uint32 size)
+	bool Socket::send(const char* data, uint32 size) const
 	{
 		if(!_connected || !valid())
-			return;
-		::send(_sockfd, data, size, 0);
+			return false;
+		return ::send(_sockfd, data, size, 0) != -1;
 	}
 	void Socket::sendto(const byte* data, uint32 size, const Address& addr)
 	{
@@ -122,6 +118,8 @@ namespace net
 		int fd = ::accept(as, &saddr, &len);
 		if(fd < 1 || len != sizeof(sockaddr_in)) // we don't support ipv6
 			return false;
+		_connected = true;
+		_bound = true;
 		_sockfd = fd;
 		return true;
 	}

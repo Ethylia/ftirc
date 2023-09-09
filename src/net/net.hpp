@@ -12,22 +12,19 @@ namespace net
 	enum addrfamily
 	{
 		invalid = 0,
-		ipv4,
-		ipv6,
-		all
+		ipv4
 	};
 
-	const char* const ADDRFAMILYSTRINGS[] = {"Invalid", "IPv4", "IPv6", "All"};
+	const char* const ADDRFAMILYSTRINGS[] = {"Invalid", "IPv4"};
 
 	enum sockettype
 	{
 		none = 0,
 		tcp,
-		udp,
 		typecount
 	};
 
-	const char* const SOCKETTYPESTRINGS[] = {"None", "TCP", "UDP"};
+	const char* const SOCKETTYPESTRINGS[] = {"None", "TCP"};
 
 	extern const int ADDRFAMILIES[];
 	extern const socklen_t SOCKSIZES[];

@@ -45,4 +45,7 @@ re: fclean all
 
 .PHONY: all clean fclean re debug noerr rel
 
--include $(OBJ_DIR)/*.d
+rwildcard=$(foreach d,$(wildcard $(1:=/*)),$(call rwildcard,$d,$2) $(filter $(subst *,%,$2),$d))
+
+# -include $(OBJ_DIR)/*.d
+-include $(call rwildcard,$(OBJ_DIR),*.d)
