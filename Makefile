@@ -5,6 +5,7 @@ SRC		=	main.cpp \
 			net/net.cpp \
 			server/server.cpp \
 			server/client.cpp \
+			server/command.cpp
 
 OBJ_DIR	=	obj
 OBJ		=	$(addprefix $(OBJ_DIR)/,$(SRC:.cpp=.o))

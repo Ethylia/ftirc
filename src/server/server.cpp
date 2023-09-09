@@ -67,7 +67,7 @@ bool Server::run()
 		std::cout << "Poll returned" << std::endl;
 		_currenttime = std::time(0);
 		for(uint64 i = 1; i < _clients.size(); ++i)
-			if(_currenttime - _clients[i]->lastping > 70)
+			if(_currenttime - _clients[i]->lastping() > 70 && _clients[i]->lastpinged() <= _clients[i]->lastping())
 				_clients[i]->ping();
 		if(_pollfds[0].revents & POLLIN)
 			accept();
@@ -125,7 +125,7 @@ bool Server::broadcast(const std::string& data, const Client* except)
 bool Server::broadcast(const std::string& data, const std::string& except)
 {
 	for(uint64 i = 1; i < _clients.size(); ++i)
-		if(_clients[i]->nick != except && !_clients[i]->send(data.c_str(), data.size()))
+		if(_clients[i]->nick() != except && !_clients[i]->send(data.c_str(), data.size()))
 			return false;
 	return true;
 }
@@ -142,10 +142,10 @@ bool Server::send(const std::string& data, const std::string& client)
 	return false;
 }
 
-const Client* Server::client(std::string nick)
+const Client* Server::client(const std::string& nick)
 {
 	for(uint64 i = 1; i < _clients.size(); ++i)
-		if(_clients[i]->nick == nick)
+		if(_clients[i]->nick() == nick)
 			return _clients[i];
 	return 0;
 }

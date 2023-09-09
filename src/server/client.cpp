@@ -5,7 +5,7 @@
 
 #include <iostream>
 
-Client::Client() : lastping(0)
+Client::Client() : flagDisconnect(false), _lastping(0), _lastpinged(0), _passworded(false), _registered(false)
 {
 }
 
@@ -15,7 +15,7 @@ Client::~Client()
 
 bool Client::accept(const net::Socket& s)
 {
-	lastping = Server::currenttime();
+	_lastping = Server::currenttime();
 	return _socket.accept(s);
 }
 
@@ -27,9 +27,9 @@ bool Client::send(const char* data, uint32 size) const
 
 bool Client::receive()
 {
-	lastping = Server::currenttime();
+	_lastping = Server::currenttime();
 	char buffer[1024];
-	uint32 r;
+	ssize_t r;
 	if((r = _socket.receive(buffer, 1023)) < 1)
 		return false;
 
@@ -52,7 +52,22 @@ bool Client::receive()
 bool Client::ping()
 {
 
-	// lastping = Server::currenttime();
+	_lastpinged = Server::currenttime();
 	std::cout << "Pinging client" << std::endl;
 	return _socket.send("PING 123\r\n", 10);
+}
+
+bool Client::password(const std::string& pass)
+{
+	if(pass == Server::password())
+		_passworded = true;
+	return _passworded;
+}
+
+bool Client::setnick(const std::string& nick)
+{
+	if(nick.empty() || nick.size() > 9)
+		return false;
+	_nick = nick;
+	return true;
 }

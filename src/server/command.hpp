@@ -7,28 +7,27 @@ class Client;
 
 namespace Command {
 	enum Type {
+		UNKNOWN = 0,
 		PASS,
 		NICK,
 		USER,
 		PRIVMSG,
 		QUIT,
 		PING,
-		PONG,
-		UNKNOWN
+		PONG
 	};
-	struct Prefix
-	{
-		std::string nick;
-		std::string user;
-		std::string host;
-	};
+	// struct Prefix
+	// {
+	// 	std::string nick;
+	// 	std::string user;
+	// 	std::string host;
+	// };
 	struct Command {
 		Type type;
-		Prefix prefix;
+		// Prefix prefix;
 		std::vector<std::string> params;
 	};
 
-	void parse(std::string command, Client* client);
-	void execute(const Command& command, Client* client);
-	std::vector<std::string> splitCmd(std::string command);
+	bool parse(std::string command, Client* client);
+	bool execute(const Command& command, Client* client);
 }

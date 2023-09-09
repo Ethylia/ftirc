@@ -1,52 +1,54 @@
 #include "command.hpp"
+
+#include "irccommands.hpp"
 #include "client.hpp"
 
-void Command::parse(std::string command, Client* client)
+bool Command::parse(std::string command, Client* client)
 {
-    const std::string cmdList[] = {"PASS", "NICK", "USER", "PRIVMSG"};
-    for (size_t i = 0; i < sizeof(cmdList)/sizeof(std::string); i++)
-    {
-        if (command.compare(cmdList[i]) == 0)
-        {
-            Command command;
-            command.type = (Type)i;
-            
-            
-            execute(command, client);
-        }
-    }
-}
+	Command cmd;
+	cmd.type = UNKNOWN;
+    const char* const cmdList[] = {"PASS", "NICK", "USER", "PRIVMSG", "QUIT", "PING", "PONG"};
 
-std::vector<std::string> Command::splitCmd(std::string command)
-{
-    std::vector<std::string> splitCmd;
-	std::string::size_type pos = command.find(" " , 0);
-	std::string::size_type newpos = command.find("\r\n", 0);
-	std::string::size_type colone = command.find(":", 0);
+	if(command.empty())
+		return false;
 
-	int i = 0;
-	while ((pos != std::string::npos || newpos != std::string::npos) && pos < colone)
+	size_t i = 0;
+	if(command[0] == ':')
 	{
-		if (pos > newpos)
-		{
-			splitCmd.push_back(command.substr(i, newpos - i));
-			i = newpos + 2;
-		}
-		else
-        {
-			splitCmd.push_back(command.substr(i, pos - i));
-			i = pos + 1;
-		}
-		pos = command.find(" ", i);
-		newpos = command.find("\r\n", i);
+		size_t pos = command.find(" ", 0);
+		if(pos == std::string::npos)
+			return false;
+		i = pos + 1;
 	}
-	if (colone != std::string::npos)
-		splitCmd.push_back(command.substr(colone, command.length() - colone - 2));
-	else
-		splitCmd.push_back(command.substr(i, command.length() - i - 2));
-	return splitCmd;
+
+	size_t y = 0;
+    for (; y < sizeof(cmdList)/sizeof(char*); ++y)
+		if(command.compare(i, std::char_traits<char>::length(cmdList[y]), cmdList[y]) == 0)
+		{
+			cmd.type = (Type)(y + 1);
+			break;
+		}
+	if(cmd.type == UNKNOWN)
+		return false; // TODO: send error message or more
+	i = command.find(" ", i + std::char_traits<char>::length(cmdList[y]));
+	while(i++ < command.size())
+	{
+		size_t pos = command.find(" ", i);
+		cmd.params.push_back(command.substr(i, pos - i));
+		i = pos;
+	}
+	return execute(cmd, client);
 }
 
-void Command::execute(const Command& command, Client* client)
+bool Command::execute(const Command& command, Client* client)
 {
+	bool (* const cmdList[])(const Command&, Client*) = {0, pass, nick, user, privmsg, quit, ping, pong};
+	if(!client->registered())
+	{
+		if(!client->passworded() && command.type != PASS)
+			return false;
+		if(command.type != NICK && command.type != USER)
+			return false;
+	}
+	return cmdList[command.type](command, client);
 }
