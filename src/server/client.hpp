@@ -14,19 +14,25 @@ public:
 	operator const int&() const { return _socket; }
 
 	bool accept(const net::Socket& s);
-	bool receive(void* data, uint32 size);
+	bool receive();
 	bool send(const char* data, uint32 size) const;
 	bool ping();
 
-	std::string name;
+	const std::string& data() const { return _data; }
 
-	time_t lastping() const { return _lastping; }
+	std::string nick;
+	std::string user;
+	std::string host;
+	std::string realname;
+
+	std::time_t lastping;
+	bool flagDisconnect;
 
 private:
 	Client(const Client& obj);
 	Client& operator=(const Client& obj);
 
-	std::time_t _lastping;
+	std::string _data;
 
 	net::Socket _socket;
 };

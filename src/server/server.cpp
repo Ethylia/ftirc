@@ -62,25 +62,24 @@ bool Server::run()
 	while(true)
 	{
 		if(poll(_pollfds.data(), _pollfds.size(), 10000) == -1 || _pollfds[0].revents & (POLLERR | POLLNVAL))
-		{
-			std::cerr << "Poll error" << std::endl;
 			return false;
-		}
+
 		std::cout << "Poll returned" << std::endl;
 		_currenttime = std::time(0);
 		for(uint64 i = 1; i < _clients.size(); ++i)
-			if(_currenttime - _clients[i]->lastping() > 70)
+			if(_currenttime - _clients[i]->lastping > 70)
 				_clients[i]->ping();
 		if(_pollfds[0].revents & POLLIN)
 			accept();
 
 		for(uint64 i = 1; i < _pollfds.size(); ++i)
-		{
 			if(_pollfds[i].revents & POLLIN)
 				if(_pollfds[i].revents & POLLHUP || !receive(i))
-					disconnect(i--);
-			_pollfds[i].revents = 0;
-		}
+					_clients[i]->flagDisconnect = true;
+
+		for(uint64 i = 1; i < _clients.size(); ++i)
+			if(_clients[i]->flagDisconnect)
+				disconnect(i--);
 	}
 	return false;
 }
@@ -102,19 +101,8 @@ bool Server::accept()
 
 bool Server::receive(uint64 id)
 {
-	char buffer[1024];
-	std::string data;
-	if(!_clients[id]->receive(buffer, 1024))
+	if(!_clients[id]->receive())
 		return false;
-
-	do
-		data += buffer;
-	while(_clients[id]->receive(buffer, 1024));
-	std::cout << "Received: " << data << std::endl;
-	for(uint64 i = 1; i < _clients.size(); ++i)
-		if(i != id)
-			if(!_clients[i]->send(data.c_str(), data.size()))
-				return std::cerr << "Failed to send data to client" << std::endl, false;
 	return true;
 }
 
@@ -127,11 +115,52 @@ void Server::disconnect(uint64 id)
 	_pollfds.erase(_pollfds.begin() + id);
 }
 
+bool Server::broadcast(const std::string& data, const Client* except)
+{
+	for(uint64 i = 1; i < _clients.size(); ++i)
+		if(_clients[i] != except && !_clients[i]->send(data.c_str(), data.size()))
+			return false;
+	return true;
+}
+bool Server::broadcast(const std::string& data, const std::string& except)
+{
+	for(uint64 i = 1; i < _clients.size(); ++i)
+		if(_clients[i]->nick != except && !_clients[i]->send(data.c_str(), data.size()))
+			return false;
+	return true;
+}
+
+bool Server::send(const std::string& data, const Client* client)
+{
+	return client->send(data.c_str(), data.size());
+}
+bool Server::send(const std::string& data, const std::string& client)
+{
+	const Client* const c = Server::client(client);
+	if(c)
+		return c->send(data.c_str(), data.size());
+	return false;
+}
+
+const Client* Server::client(std::string nick)
+{
+	for(uint64 i = 1; i < _clients.size(); ++i)
+		if(_clients[i]->nick == nick)
+			return _clients[i];
+	return 0;
+}
+
+const Client* Server::client(uint64 id)
+{
+	return _clients[id];
+}
+
 void Server::shutdown()
 {
-	std::cout << "Server destructor" << std::endl;
+	std::cout << "Server shutdown" << std::endl;
 	delete _newclient;
 	_newclient = 0;
-	for(uint64 i = 0; i < _clients.size(); ++i)
+	for(uint64 i = 1; i < _clients.size(); ++i)
 		delete _clients[i];
+	_clients.clear();
 }

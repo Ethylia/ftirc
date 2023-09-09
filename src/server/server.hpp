@@ -22,7 +22,20 @@ public:
 	static bool receive(uint64 id);
 	static void disconnect(uint64 id);
 
+	static bool broadcast(const std::string& data, const Client* except = 0);
+	static bool broadcast(const std::string& data, const std::string& except);
+	static bool send(const std::string& data, const Client* client);
+	static bool send(const std::string& data, const std::string& client);
+
+	static const Client* client(std::string nick);
+	static const Client* client(uint64 id);
+
+	static void checkTimeouts();
+
 	static time_t currenttime() { return _currenttime; }
+
+	static uint16 port() { return _port; }
+	static const std::string& password() { return _password; }
 
 private:
 	Server(const Server& obj);
