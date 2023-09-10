@@ -71,3 +71,20 @@ bool Client::setnick(const std::string& nick)
 	_nick = nick;
 	return true;
 }
+
+bool Client::setuser(const std::string& user, const std::string& host, const std::string& realname)
+{
+	if(user.empty() || host.empty() || realname.empty())
+		return false;
+	if(user.size() > 9)
+		return false;
+
+	// if () {} // Check hostname too?
+	
+	_user = user;
+	_host = host;
+	_realname = realname;
+
+	_registered = true;
+	return true;
+}
