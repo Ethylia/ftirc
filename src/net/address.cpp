@@ -32,7 +32,7 @@ namespace net
 		_af(ipv4)
 	{
 		_port = htons(port);
-		_address.v4.sin_len = sizeof(sockaddr_in);
+		// _address.v4.sin_len = sizeof(sockaddr_in);
 		_address.v4.sin_family = AF_INET;
 		_address.v4.sin_addr = addr;
 	}
@@ -49,7 +49,7 @@ namespace net
 	Address::Address(const char* ip, uint16 port) :
 		_af(ipv4)
 	{
-		_address._sa.sa_len = SOCKSIZES[ipv4];
+		// _address._sa.sa_len = SOCKSIZES[ipv4];
 		_address._sa.sa_family = ADDRFAMILIES[ipv4];
 		if(ip[0])
 		{

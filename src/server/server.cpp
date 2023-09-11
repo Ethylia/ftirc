@@ -50,7 +50,10 @@ bool Server::init(uint16 port, const char* password)
 		std::cerr << "Failed to enable listen queue on accepting socket" << std::endl;
 		return false;
 	}
-	pollfd pfd = {.fd = _asocket, .events = POLLIN, .revents = 0};
+	pollfd pfd;
+	pfd.fd = _asocket;
+	pfd.events = POLLIN;
+	pfd.revents = 0;
 	_pollfds.push_back(pfd);
 	_clients.push_back(0); // dummy client to align indices
 	return true;
@@ -89,7 +92,10 @@ bool Server::accept()
 	if(_newclient->accept(_asocket))
 	{
 		_clients.push_back(_newclient);
-		pollfd pfd = {.fd = *_newclient, .events = POLLIN, .revents = 0};
+		pollfd pfd;
+		pfd.fd = *_newclient;
+		pfd.events = POLLIN;
+		pfd.revents = 0;
 		_pollfds.push_back(pfd);
 		_newclient = new Client();
 		std::cout << "Client connected" << std::endl;

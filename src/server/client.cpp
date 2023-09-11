@@ -19,10 +19,19 @@ bool Client::accept(const net::Socket& s)
 	return _socket.accept(s);
 }
 
+bool Client::send(const char* string) const
+{
+	return _socket.send(string, std::char_traits<char>::length(string));
+}
+
 bool Client::send(const char* data, uint32 size) const
 {
-	// lastping = Server::currenttime();
 	return _socket.send(data, size);
+}
+
+bool Client::send(const std::string& data) const
+{
+	return _socket.send(data.c_str(), data.size());
 }
 
 bool Client::receive()
@@ -40,18 +49,17 @@ bool Client::receive()
 		size_t pos;
 		if((pos = _data.find("\r\n")) != std::string::npos)
 		{
-			std::cout << "Received: " << _data.substr(0, pos) << std::endl;
 			Command::parse(_data.substr(0, pos), this);
+			std::cout << "Received: " << _data.substr(0, pos) << std::endl;
 			_data.erase(0, pos + 2);
 		}
-	} while ((r = _socket.receive(buffer, 1023)) > 0);
+	} while((r = _socket.receive(buffer, 1023)) > 0);
 	
 	return true;
 }
 
 bool Client::ping()
 {
-
 	_lastpinged = Server::currenttime();
 	std::cout << "Pinging client" << std::endl;
 	return _socket.send("PING 123\r\n", 10);

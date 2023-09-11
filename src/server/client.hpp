@@ -15,7 +15,9 @@ public:
 
 	bool accept(const net::Socket& s);
 	bool receive();
+	bool send(const char* string) const;
 	bool send(const char* data, uint32 size) const;
+	bool send(const std::string& data) const;
 	bool ping();
 
 	const std::string& data() const { return _data; }

@@ -7,8 +7,6 @@
 #include "common.hpp"
 #include "address.hpp"
 
-#include <mutex>
-
 namespace net
 {
 	class Socket

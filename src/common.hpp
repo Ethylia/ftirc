@@ -1,6 +1,6 @@
 #pragma once
 
-#include <cstdint>
+#include <stdint.h>
 
 typedef unsigned int uint;
 typedef unsigned short ushort;

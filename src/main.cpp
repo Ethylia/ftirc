@@ -1,4 +1,5 @@
 #include <iostream>
+#include <cstdlib>
 
 #include <signal.h>
 
@@ -17,7 +18,8 @@ int main(int argc, char **argv)
 
 	Server server;
 
-	struct sigaction sigact = {.sa_handler = signal_handler};
+	struct sigaction sigact;
+	sigact.sa_handler = signal_handler;
 	sigaction(SIGINT, &sigact, NULL);
 
 	if(!Server::init(8080, "password"))
