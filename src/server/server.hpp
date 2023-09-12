@@ -29,6 +29,7 @@ public:
 
 	static const Client* client(const std::string& nick);
 	static const Client* client(uint64 id);
+	static size_t clientCount() { return _clients.size(); }
 
 	static void checkTimeouts();
 
@@ -37,9 +38,15 @@ public:
 	static uint16 port() { return _port; }
 	static const std::string& password() { return _password; }
 
+	static bool sendUserList(const Client* client);
+
+	static const std::string VERSION;
+	static const std::string NAME;
+
 private:
 	Server(const Server& obj);
 	Server& operator=(const Server& obj);
+
 
 	static time_t _currenttime;
 

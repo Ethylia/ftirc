@@ -28,6 +28,7 @@ noerr: all
 
 rel: CFLAGS += -Ofast
 rel: LDFLAGS += -O1
+rel: all
 
 $(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp
 	@mkdir -p $(dir $@)

@@ -50,7 +50,7 @@ bool Client::receive()
 		if((pos = _data.find("\r\n")) != std::string::npos)
 		{
 			Command::parse(_data.substr(0, pos), this);
-			std::cout << "Received: " << _data.substr(0, pos) << std::endl;
+			std::cout << "Received: " << _data.substr(0, pos + 2) << std::endl;
 			_data.erase(0, pos + 2);
 		}
 	} while((r = _socket.receive(buffer, 1023)) > 0);

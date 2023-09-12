@@ -14,7 +14,8 @@ namespace Command {
 		PRIVMSG,
 		QUIT,
 		PING,
-		PONG
+		PONG,
+		CAP
 	};
 	// struct Prefix
 	// {

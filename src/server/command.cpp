@@ -9,7 +9,7 @@ namespace Command
 	{
 		Command cmd;
 		cmd.type = UNKNOWN;
-		const char* const cmdList[] = {"PASS", "NICK", "USER", "PRIVMSG", "QUIT", "PING", "PONG"};
+		const char* const cmdList[] = {"PASS", "NICK", "USER", "PRIVMSG", "QUIT", "PING", "PONG", "CAP"};
 
 		if(command.empty())
 			return false;
@@ -49,8 +49,8 @@ namespace Command
 
 	bool execute(const Command& command, Client* client)
 	{
-		bool (* const cmdList[])(const Command&, Client*) = {0, pass, nick, user, privmsg, quit, ping, pong};
-		if(!client->registered())
+		bool (* const cmdList[])(const Command&, Client*) = {0, pass, nick, user, privmsg, quit, ping, pong, cap};
+		if(!client->registered() && command.type != CAP)
 		{
 			if(client->passworded())
 			{
@@ -61,6 +61,7 @@ namespace Command
 				if(command.type != PASS)
 					return false;
 		}
+
 		return cmdList[command.type](command, client);
 	}
 }

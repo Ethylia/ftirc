@@ -3,6 +3,8 @@
 
 #include "server.hpp"
 
+#include <sstream>
+
 namespace Command
 {
 	bool pass(const Command &command, Client *client)
@@ -61,8 +63,16 @@ namespace Command
 			client->send("ERROR :Invalid username\r\n");
 			return false;
 		}
-		// send welcome message
-		client->send("Welcome to the Internet Relay Chat\r\n");
+		std::stringstream ss;
+		ss << (Server::clientCount() - 1);
+		std::string clientCount = ss.str();
+
+		client->send("001 " + client->nick() + " :Welcome to the Internet Relay Chat\r\n");
+		client->send("002 " + client->nick() + " :Your host is " + Server::NAME + ", running version " + Server::VERSION + "\r\n");
+		client->send("003 " + client->nick() + " :This server was created sometime ago" + "\r\n");
+		client->send("004 " + client->nick() + " " + Server::NAME + "-" + Server::VERSION + " " + "o o" + "\r\n");
+
+		client->send("251 " + client->nick() + " :There are " + clientCount + " users and 0 services on 1 server\r\n");
 
 		return true;
 	}
@@ -119,6 +129,15 @@ namespace Command
 		(void)client;
 		if(command.params.size() < 1)
 			return false;
+		return true;
+	}
+
+	bool cap(const Command& command, Client* client)
+	{
+		if(command.params.size() < 1)
+			return false;
+		if(command.params[0] == "LS")
+			client->send("CAP * LS\r\n");
 		return true;
 	}
 }

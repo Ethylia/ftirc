@@ -11,4 +11,5 @@ namespace Command
 	bool quit(const Command& command, Client* client);
 	bool ping(const Command& command, Client* client);
 	bool pong(const Command& command, Client* client);
+	bool cap(const Command& command, Client* client);
 }

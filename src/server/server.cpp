@@ -4,6 +4,8 @@
 
 #include "net/address.hpp"
 
+const std::string Server::VERSION = "0.1";
+const std::string Server::NAME = "localhost";
 time_t Server::_currenttime = 0;
 uint16 Server::_port = 8080;
 std::string Server::_password;
@@ -64,25 +66,31 @@ bool Server::run()
 	_newclient = new Client();
 	while(true)
 	{
-		if(poll(_pollfds.data(), _pollfds.size(), 10000) == -1 || _pollfds[0].revents & (POLLERR | POLLNVAL))
+		int r;
+		if((r = poll(_pollfds.data(), _pollfds.size(), 1000)) < 0 || _pollfds[0].revents & (POLLERR | POLLNVAL))
 			return false;
 
-		std::cout << "Poll returned" << std::endl;
+		// std::cout << "Poll returned" << std::endl;
 		_currenttime = std::time(0);
+
 		for(uint64 i = 1; i < _clients.size(); ++i)
 			if(_currenttime - _clients[i]->lastping() > 70 && _clients[i]->lastpinged() <= _clients[i]->lastping())
 				_clients[i]->ping();
-		if(_pollfds[0].revents & POLLIN)
-			accept();
 
-		for(uint64 i = 1; i < _pollfds.size(); ++i)
-			if(_pollfds[i].revents & POLLIN)
-				if(_pollfds[i].revents & POLLHUP || !receive(i))
-					_clients[i]->flagDisconnect = true;
+		if(r)
+		{ // only if poll didn't timeout and actually returned events
+			if(_pollfds[0].revents & POLLIN)
+				accept();
 
-		for(uint64 i = 1; i < _clients.size(); ++i)
-			if(_clients[i]->flagDisconnect)
-				disconnect(i--);
+			for(uint64 i = 1; i < _pollfds.size(); ++i)
+				if(_pollfds[i].revents & POLLIN)
+					if(_pollfds[i].revents & POLLHUP || !receive(i))
+						_clients[i]->flagDisconnect = true;
+
+			for(uint64 i = 1; i < _clients.size(); ++i)
+				if(_clients[i]->flagDisconnect)
+					disconnect(i--);
+		}
 	}
 	return false;
 }
@@ -169,4 +177,16 @@ void Server::shutdown()
 	for(uint64 i = 1; i < _clients.size(); ++i)
 		delete _clients[i];
 	_clients.clear();
+}
+
+bool Server::sendUserList(const Client* client)
+{
+	std::string msg = ":" + Server::NAME + " 353 " + client->nick() + " = " + client->nick() + " :";
+	for(uint64 i = 1; i < _clients.size(); ++i)
+	{
+		msg += _clients[i]->nick();
+		msg += " ";
+	}
+	msg += "\r\n";
+	return client->send(msg.c_str(), msg.size());
 }
