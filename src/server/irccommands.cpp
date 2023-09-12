@@ -98,7 +98,7 @@ namespace Command
 			return false;
 		}
 		// send message
-		std::string msg = ":" + client->nick() + "!" + client->user() + "@" + client->host() + " PRIVMSG " + msgTarget->nick();
+		std::string msg = "PRIVMSG " + msgTarget->nick();
 		// we splitted the message too, so we need to reassemble it
 		for(size_t i = 1; i < command.params.size() - 1; i++)
 		{
@@ -112,8 +112,10 @@ namespace Command
 
 	bool quit(const Command& command, Client* client)
 	{
-		(void)command;
-		(void)client;
+		if(command.params.size() < 1)
+			return false;
+		client->send("ERROR :Quit: " + command.params[0] + "\r\n");
+		client->flagDisconnect = true;
 		return true;
 	}
 

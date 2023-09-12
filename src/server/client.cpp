@@ -42,19 +42,21 @@ bool Client::receive()
 	if((r = _socket.receive(buffer, 1023)) < 1)
 		return false;
 
-	do
+	do // Receive all data
 	{
 		buffer[r] = '\0';
 		_data += buffer;
-		size_t pos;
-		if((pos = _data.find("\r\n")) != std::string::npos)
-		{
-			Command::parse(_data.substr(0, pos), this);
-			std::cout << "Received: " << _data.substr(0, pos + 2) << std::endl;
-			_data.erase(0, pos + 2);
-		}
 	} while((r = _socket.receive(buffer, 1023)) > 0);
-	
+
+	std::cout << "Received: " << _data << std::endl;
+
+	size_t pos;
+	while((pos = _data.find("\r\n")) != std::string::npos)
+	{ // execute all complete commands
+		Command::parse(_data.substr(0, pos), this);
+		_data.erase(0, pos + 2);
+	}
+
 	return true;
 }
 
