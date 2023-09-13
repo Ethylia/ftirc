@@ -15,7 +15,9 @@ namespace Command {
 		QUIT,
 		PING,
 		PONG,
-		CAP
+		CAP,
+		OPER,
+		MODE
 	};
 	// struct Prefix
 	// {

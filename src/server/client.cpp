@@ -5,7 +5,7 @@
 
 #include <iostream>
 
-Client::Client() : flagDisconnect(false), _lastping(0), _lastpinged(0), _passworded(false), _registered(false)
+Client::Client() : flagDisconnect(false), _lastping(0), _lastpinged(0), _modes(0)
 {
 }
 
@@ -60,6 +60,16 @@ bool Client::receive()
 	return true;
 }
 
+bool Client::oper(const std::string& user, const std::string& pass)
+{
+	if(user == _user && pass == Server::oppassword())
+	{
+		_modes |= MODE_O;
+		return true;
+	}
+	return false;
+}
+
 bool Client::ping()
 {
 	_lastpinged = Server::currenttime();
@@ -70,8 +80,8 @@ bool Client::ping()
 bool Client::password(const std::string& pass)
 {
 	if(pass == Server::password())
-		_passworded = true;
-	return _passworded;
+		_modes |= MODE_PASSWORDED;
+	return _modes & MODE_PASSWORDED;
 }
 
 bool Client::setnick(const std::string& nick)
@@ -95,6 +105,6 @@ bool Client::setuser(const std::string& user, const std::string& host, const std
 	_host = host;
 	_realname = realname;
 
-	_registered = true;
+	_modes |= MODE_REGISTERED;
 	return true;
 }

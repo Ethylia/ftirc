@@ -29,7 +29,7 @@ public:
 
 	static const Client* client(const std::string& nick);
 	static const Client* client(uint64 id);
-	static size_t clientCount() { return _clients.size(); }
+	static size_t clientCount() { return _clients.size() - 1; }
 
 	static void checkTimeouts();
 
@@ -37,6 +37,7 @@ public:
 
 	static uint16 port() { return _port; }
 	static const std::string& password() { return _password; }
+	static const std::string& oppassword() { return _oppassword; }
 
 	static bool sendUserList(const Client* client);
 
@@ -52,6 +53,7 @@ private:
 
 	static uint16 _port;
 	static std::string _password;
+	static const std::string _oppassword;
 
 	static net::Socket _asocket;
 	static Client* _newclient;

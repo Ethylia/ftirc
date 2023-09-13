@@ -9,6 +9,7 @@ const std::string Server::NAME = "localhost";
 time_t Server::_currenttime = 0;
 uint16 Server::_port = 8080;
 std::string Server::_password;
+const std::string Server::_oppassword = "oppass";
 net::Socket Server::_asocket;
 Client* Server::_newclient = 0;
 std::vector<Client*> Server::_clients;

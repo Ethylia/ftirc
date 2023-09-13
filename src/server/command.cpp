@@ -9,7 +9,7 @@ namespace Command
 	{
 		Command cmd;
 		cmd.type = UNKNOWN;
-		const char* const cmdList[] = {"PASS", "NICK", "USER", "PRIVMSG", "QUIT", "PING", "PONG", "CAP"};
+		const char* const cmdList[] = {"PASS", "NICK", "USER", "PRIVMSG", "QUIT", "PING", "PONG", "CAP", "OPER", "MODE"};
 
 		if(command.empty())
 			return false;
@@ -32,7 +32,7 @@ namespace Command
 			}
 		if(cmd.type == UNKNOWN)
 			return false; // TODO: send error message or more
-		i = command.find(" ", i + std::char_traits<char>::length(cmdList[y])) + 1;
+		i = command.find(' ', i + std::char_traits<char>::length(cmdList[y])) + 1;
 		while(i < command.size())
 		{
 			if(command[i] == ':')
@@ -40,16 +40,16 @@ namespace Command
 				cmd.params.push_back(command.substr(i + 1));
 				break;
 			}
-			size_t pos = command.find(" ", i);
+			size_t pos = command.find(' ', i);
 			cmd.params.push_back(command.substr(i, pos - i));
-			i = command.find_first_not_of(" ", pos);
+			i = command.find_first_not_of(' ', pos);
 		}
 		return execute(cmd, client);
 	}
 
 	bool execute(const Command& command, Client* client)
 	{
-		bool (* const cmdList[])(const Command&, Client*) = {0, pass, nick, user, privmsg, quit, ping, pong, cap};
+		bool (* const cmdList[])(const Command&, Client*) = {0, pass, nick, user, privmsg, quit, ping, pong, cap, oper, mode};
 		if(!client->registered() && command.type != CAP)
 		{
 			if(client->passworded())
