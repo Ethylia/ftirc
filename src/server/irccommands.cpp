@@ -155,61 +155,80 @@ namespace Command
 		return true;
 	}
 
+	template<void (Client::*func)(int)>
+	static bool parseModes(std::string& s, const char* const modes, Client* client)
+	{
+		bool allKnown = true;
+		for(size_t i = 0; i < s.size(); ++i)
+		{
+			bool found = false;
+			for(size_t j = 0; j < std::char_traits<char>::length(modes); ++j)
+				if(s[i] == modes[j])
+				{
+					found = true;
+					(client->*func)(1 << j);
+					break;
+				}
+			if(!found)
+			{
+				unknownModes = false;
+				s.erase(i, 1);
+				--i;
+			}
+		}
+		return allKnown;
+	}
+
 	bool mode(const Command& command, Client* client)
 	{
-		const char* const USERMODES = "iosv";
 		if(command.params.size() < 2)
 			return false;
-
-		std::string addmodes;
-		std::string delmodes;
-		// gather all the added and removed modes in two strings
-		for(size_t i = 1; i < command.params.size(); ++i)
-			if(command.params[i][0] == '+')
-				for(size_t j = 1; j < command.params[i].size(); ++j)
-					addmodes += command.params[i][j];
-			else if(command.params[i][0] == '-')
-				for(size_t j = 1; j < command.params[i].size(); ++j)
-					delmodes += command.params[i][j];
 		
-		// remove all unknown modes and send a message if there were any
-		// need to erase so the MODE reply has the correct modes
-		size_t p = addmodes.find_first_not_of(USERMODES);
-		size_t p2 = delmodes.find_first_not_of(USERMODES);
-		bool unknownModes = (p != std::string::npos || p2 != std::string::npos);
-		while(p != std::string::npos)
-		{
-			addmodes.erase(p, 1);
-			p = addmodes.find_first_not_of(USERMODES);
+		if(command.params[0][0] != '#')
+		{ // if the first parameter is not a channel, it's a user
+			Client* target = Server::client(command.params[0]);
+			if(!target)
+			{ // find the user and check if it exists
+				client->send("ERROR :No such nick\r\n");
+				return false;
+			}
+			// parse the modes
+			size_t i = 0;
+			bool unknownModes = false;
+			std::string modes;
+			if(command.params[1][i] == '+')
+			{ // if there is a '+', fetch all the modes to be added after it
+				size_t pos = command.params[1].find_first_not_of(Client::USERMODES, i + 1);
+				if(pos - i > 1) // chop a substring from the + to the closest non-mode character
+					modes += command.params[1].substr(i, pos - i);
+				// add all the modes to the client and erase invalid ones from the mode string
+				for(size_t j = i + 1; j < pos; ++j)
+					if(!target->addmode(command.params[1][j]))
+					{
+						unknownModes = true;
+						modes.erase(j, 1);
+					} 
+				i = pos;
+			}
+			if(command.params[1][i] == '-')
+			{ // next we do the same for the '-' modes that come after the '+' ones or at the start
+				size_t pos = command.params[1].find_first_not_of(Client::USERMODES, i + 1);
+				if(pos - i > 1)
+					modes += command.params[1].substr(i, pos - i);
+				for(size_t j = i; j < pos; ++j)
+					if(!target->delmode(command.params[1][j]))
+					{
+						unknownModes = true;
+						modes.erase(j, 1);
+					}
+			}
+			// send a message if there were any unknown modes
+			if(unknownModes)
+				client->send("501 " + client->nick() + " :Unknown MODE flag\r\n");
+			// send a MODE message if there were any modes changed
+			if(!modes.empty())
+				client->send("MODE " + target->nick() + " " + modes + "\r\n");
 		}
-		while(p2 != std::string::npos)
-		{
-			delmodes.erase(p2, 1);
-			p2 = delmodes.find_first_not_of(USERMODES);
-		}
-
-		if(unknownModes)
-			client->send("501 " + client->nick() + " :Unknown MODE flag\r\n");
-
-		// apply all modes to client
-		for(size_t i = 0; i < addmodes.size(); ++i)
-			for(size_t j = 0; j < std::char_traits<char>::length(USERMODES); ++j)
-				if(addmodes[i] == USERMODES[j])
-				{
-					client->addmode(1 << j);
-					break;
-				}
-		for(size_t i = 0; i < delmodes.size(); ++i)
-			for(size_t j = 0; j < std::char_traits<char>::length(USERMODES); ++j)
-				if(delmodes[i] == USERMODES[j])
-				{
-					client->delmode(1 << j);
-					break;
-				}
-		// MODE reply with all known modes that were changed
-		if(!addmodes.empty() || !delmodes.empty())
-			client->send("MODE " + client->nick() + ((!addmodes.empty()) ? (" +" + addmodes) : (" ")) + ((!delmodes.empty()) ? (" -" + delmodes) : (" ")) + "\r\n");
-
 		return true;
 	}
 }

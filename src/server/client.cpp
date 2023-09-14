@@ -5,6 +5,8 @@
 
 #include <iostream>
 
+const char* const Client::USERMODES = "iosv";
+
 Client::Client() : flagDisconnect(false), _lastping(0), _lastpinged(0), _modes(0)
 {
 }
@@ -107,4 +109,9 @@ bool Client::setuser(const std::string& user, const std::string& host, const std
 
 	_modes |= MODE_REGISTERED;
 	return true;
+}
+
+bool Client::addmode(char c)
+{
+
 }

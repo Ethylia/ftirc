@@ -157,7 +157,7 @@ bool Server::send(const std::string& data, const std::string& client)
 	return false;
 }
 
-const Client* Server::client(const std::string& nick)
+Client* Server::client(const std::string& nick)
 {
 	for(uint64 i = 1; i < _clients.size(); ++i)
 		if(_clients[i]->nick() == nick)
@@ -165,7 +165,7 @@ const Client* Server::client(const std::string& nick)
 	return 0;
 }
 
-const Client* Server::client(uint64 id)
+Client* Server::client(uint64 id)
 {
 	return _clients[id];
 }

@@ -27,8 +27,8 @@ public:
 	static bool send(const std::string& data, const Client* client);
 	static bool send(const std::string& data, const std::string& client);
 
-	static const Client* client(const std::string& nick);
-	static const Client* client(uint64 id);
+	static Client* client(const std::string& nick);
+	static Client* client(uint64 index);
 	static size_t clientCount() { return _clients.size() - 1; }
 
 	static void checkTimeouts();

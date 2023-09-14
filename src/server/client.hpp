@@ -11,14 +11,16 @@ public:
 	Client();
 	~Client();
 
+	static const char* const USERMODES;
+
 	enum
 	{
-		MODE_I = 1,
-		MODE_O = 2,
-		MODE_S = 4,
-		MODE_V = 8,
-		MODE_REGISTERED = 16,
-		MODE_PASSWORDED = 32
+		MODE_I = 1 << 0,
+		MODE_O = 1 << 1,
+		MODE_S = 1 << 2,
+		MODE_V = 1 << 3,
+		MODE_REGISTERED = 1 << 4,
+		MODE_PASSWORDED = 1 << 5
 	};
 
 	operator const int&() const { return _socket; }
@@ -29,6 +31,7 @@ public:
 	bool send(const char* data, uint32 size) const;
 	bool send(const std::string& data) const;
 	bool ping();
+	bool sendmodes(const std::string& added, const std::string& removed) const;
 
 	const std::string& data() const { return _data; }
 
@@ -37,7 +40,9 @@ public:
 	bool setuser(const std::string& user, const std::string& host, const std::string& realname);
 	bool oper(const std::string& user, const std::string& pass);
 	void addmode(int mode) { _modes |= mode; }
+	bool addmode(char mode);
 	void delmode(int mode) { _modes &= ~mode; }
+	bool delmode(char mode);
 	int modes() const { return _modes; }
 
 	const std::string& nick() const { return _nick; }
@@ -47,6 +52,7 @@ public:
 
 	bool passworded() const { return _modes & MODE_PASSWORDED; }
 	bool registered() const { return _modes & MODE_REGISTERED; }
+	bool isoper() const { return _modes & MODE_O; }
 
 	std::time_t lastping() const { return _lastping; }
 	std::time_t lastpinged() const { return _lastpinged; }
