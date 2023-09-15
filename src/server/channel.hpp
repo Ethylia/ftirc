@@ -15,7 +15,8 @@ public:
 	{
 		MODE_INVITE_ONLY = 1 << 0,
 		MODE_TOPIC_PROTECTED = 1 << 1,
-		MODE_LIMIT_USERS = 1 << 2
+		MODE_LIMIT_USERS = 1 << 2,
+		MODE_KEY_REQUIRED = 1 << 3
 	};
 
 	const std::string& getChannelName() const { return _channelName; }
@@ -24,14 +25,14 @@ public:
 	const std::string& getCurrentTopic() const { return _topic; } // TOPIC #channelName
 	
 	bool isUserInChannel(Client* user) const;
-	bool addUser(Client* user); // JOIN
+	bool addUser(Client* user, std::string key = ""); // JOIN
 	bool removeUser(Client* user); // PART
 
 	bool isUserChannelOperator(Client* user) const;
 	bool addChannelOperator(Client* op, Client* userTarget); // MODE +o
 	bool removeChannelOperator(Client* op, Client* userTarget); // MODE -o
 
-	bool setTopic(Client* op, std::string topic); // TOPIC #channelName :topic
+	bool setTopic(Client* user, std::string topic); // TOPIC #channelName :topic
 	bool sendChannelMessage(Client* user, std::string message); // PRIVMSG #channelName :message
 
 	bool inviteUser(Client* op, Client* userTarget); // INVITE user #channelName
@@ -42,7 +43,6 @@ private:
 	std::string _channelName;
 	std::vector<Client*> _userList;
 	std::vector<Client*> _channelOperators; // _channelOperators[0] is the channel creator
-	std::string _topic;
 	std::vector<Client*> _invitedUserList;
 
 	int _modes; // bit field

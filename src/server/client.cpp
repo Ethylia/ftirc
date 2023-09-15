@@ -82,8 +82,8 @@ bool Client::ping()
 bool Client::password(const std::string& pass)
 {
 	if(pass == Server::password())
-		_modes |= MODE_PASSWORDED;
-	return _modes & MODE_PASSWORDED;
+		_modes |= USER_PASSWORDED;
+	return _modes & USER_PASSWORDED;
 }
 
 bool Client::setnick(const std::string& nick)
@@ -107,11 +107,6 @@ bool Client::setuser(const std::string& user, const std::string& host, const std
 	_host = host;
 	_realname = realname;
 
-	_modes |= MODE_REGISTERED;
+	_modes |= USER_REGISTERED;
 	return true;
-}
-
-bool Client::addmode(char c)
-{
-
 }

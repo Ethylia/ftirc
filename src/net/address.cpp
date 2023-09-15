@@ -1,6 +1,7 @@
 #include "address.hpp"
 
 #include <netdb.h>
+#include <unistd.h>
 #include <arpa/inet.h>
 #include <cstring>
 #include <cstdlib>
@@ -35,6 +36,14 @@ namespace net
 		// _address.v4.sin_len = sizeof(sockaddr_in);
 		_address.v4.sin_family = AF_INET;
 		_address.v4.sin_addr = addr;
+	}
+	Address::Address(in_addr_t addr, uint16 port) :
+		_af(ipv4)
+	{
+		_port = htons(port);
+		// _address.v4.sin_len = sizeof(sockaddr_in);
+		_address.v4.sin_family = AF_INET;
+		_address.v4.sin_addr.s_addr = addr;
 	}
 	Address::Address(const sockaddr* addr)
 	{

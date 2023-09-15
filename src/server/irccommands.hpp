@@ -14,4 +14,5 @@ namespace Command
 	bool cap(const Command& command, Client* client);
 	bool oper(const Command& command, Client* client);
 	bool mode(const Command& command, Client* client);
+	bool join(const Command& command, Client* client);
 }

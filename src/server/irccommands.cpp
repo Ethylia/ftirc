@@ -1,6 +1,6 @@
 #include "irccommands.hpp"
 #include "client.hpp"
-
+#include "channel.hpp"
 #include "server.hpp"
 
 #include <sstream>
@@ -141,42 +141,29 @@ namespace Command
 	bool oper(const Command& command, Client* client)
 	{
 		if(command.params.size() < 2)
+		{
+			client->send(":" + Server::host() + " 461 " + client->nick() + " OPER :Not enough parameters.\r\n");
 			return false;
+		}
 
 		if(!client->oper(command.params[0], command.params[1]))
 		{
-			client->send("ERROR :Invalid oper credentials\r\n");
+			client->send(":" + Server::host() + " 491" + client->nick() + " :Invalid oper credentials\r\n");
 			return false;
 		}
-		client->send("381 " + client->nick() + " :You are now an IRC operator\r\n");
 
-		//std::string msg = ":" + client->nick() + "!" + client->user() + "@" + client->host() + " MODE " + channel->name() + " +o " + opUser->nick() + "\r\n";
+		client->send(":" + client->host() + " MODE " + client->nick() + " :+o\r\n");
+		client->send("381 " + client->nick() + " :You are now an IRC operator\r\n");
 
 		return true;
 	}
 
-	template<void (Client::*func)(int)>
-	static bool parseModes(std::string& s, const char* const modes, Client* client)
+	static int parseMode(char mode)
 	{
-		bool allKnown = true;
-		for(size_t i = 0; i < s.size(); ++i)
-		{
-			bool found = false;
-			for(size_t j = 0; j < std::char_traits<char>::length(modes); ++j)
-				if(s[i] == modes[j])
-				{
-					found = true;
-					(client->*func)(1 << j);
-					break;
-				}
-			if(!found)
-			{
-				unknownModes = false;
-				s.erase(i, 1);
-				--i;
-			}
-		}
-		return allKnown;
+		for(size_t i = 0; i < std::char_traits<char>::length(Client::USERMODES); ++i)
+			if(mode == Client::USERMODES[i])
+				return 1 << i;
+		return Client::MODE_UNKNOWN;
 	}
 
 	bool mode(const Command& command, Client* client)
@@ -194,41 +181,60 @@ namespace Command
 			}
 			// parse the modes
 			size_t i = 0;
-			bool unknownModes = false;
-			std::string modes;
-			if(command.params[1][i] == '+')
-			{ // if there is a '+', fetch all the modes to be added after it
-				size_t pos = command.params[1].find_first_not_of(Client::USERMODES, i + 1);
-				if(pos - i > 1) // chop a substring from the + to the closest non-mode character
-					modes += command.params[1].substr(i, pos - i);
-				// add all the modes to the client and erase invalid ones from the mode string
-				for(size_t j = i + 1; j < pos; ++j)
-					if(!target->addmode(command.params[1][j]))
-					{
-						unknownModes = true;
-						modes.erase(j, 1);
-					} 
-				i = pos;
-			}
-			if(command.params[1][i] == '-')
-			{ // next we do the same for the '-' modes that come after the '+' ones or at the start
-				size_t pos = command.params[1].find_first_not_of(Client::USERMODES, i + 1);
-				if(pos - i > 1)
-					modes += command.params[1].substr(i, pos - i);
-				for(size_t j = i; j < pos; ++j)
-					if(!target->delmode(command.params[1][j]))
-					{
-						unknownModes = true;
-						modes.erase(j, 1);
-					}
+			if(command.params[1][0] != '+' && command.params[1][0] != '-')
+				return false;
+			std::string modestr;
+			bool unknown = false;
+			while(i < command.params[1].size())
+			{
+				size_t j;
+				modestr += command.params[1][i];
+				for(j = i + 1; command.params[1][j] && command.params[1][j] != '+' && command.params[1][j] != '-'; ++j)
+				{
+					int r = parseMode(command.params[1][j]);
+					if(r == Client::MODE_UNKNOWN)
+						unknown = true;
+					else if(command.params[1][i] == '+' && client->addmode(r))
+						modestr += command.params[1][j];
+					else if(client->delmode(r))
+						modestr += command.params[1][j];
+				}
+				i = j;
 			}
 			// send a message if there were any unknown modes
-			if(unknownModes)
+			if(unknown)
 				client->send("501 " + client->nick() + " :Unknown MODE flag\r\n");
 			// send a MODE message if there were any modes changed
-			if(!modes.empty())
-				client->send("MODE " + target->nick() + " " + modes + "\r\n");
+			if(modestr.find_first_not_of("+-") != std::string::npos)
+				client->send(":" + Server::host() + " MODE " + target->nick() + " " + modestr + "\r\n");
 		}
+		return true;
+	}
+
+	bool join(const Command& command, Client* client)
+	{
+		if(command.params.size() < 1)
+			return false;
+		// check if the channel name is valid
+		std::string channelPrefixes = "#&+!";
+		if(command.params[0].size() > 1 || channelPrefixes.find(command.params[0][0]) == std::string::npos)
+		{
+			client->send("ERROR :Invalid channel name\r\n");
+			return false;
+		}
+		// check if the channel exists
+		Channel* channel = Server::channel(command.params[0]);
+		if(!channel)
+		{
+			channel = Server::createChannel(command.params[0], client);
+			if(!channel)
+			{
+				client->send("ERROR :Channel creation failed\r\n");
+				return false;
+			}
+		}
+		channel->addUser(client);
+		client->send("JOIN " + channel->getChannelName() + "\r\n");
 		return true;
 	}
 }

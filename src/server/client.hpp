@@ -19,8 +19,10 @@ public:
 		MODE_O = 1 << 1,
 		MODE_S = 1 << 2,
 		MODE_V = 1 << 3,
-		MODE_REGISTERED = 1 << 4,
-		MODE_PASSWORDED = 1 << 5
+		MODE_COUNT = 4,
+		USER_REGISTERED = 1 << 4,
+		USER_PASSWORDED = 1 << 5,
+		MODE_UNKNOWN = 1 << 6
 	};
 
 	operator const int&() const { return _socket; }
@@ -39,10 +41,8 @@ public:
 	bool setnick(const std::string& nick);
 	bool setuser(const std::string& user, const std::string& host, const std::string& realname);
 	bool oper(const std::string& user, const std::string& pass);
-	void addmode(int mode) { _modes |= mode; }
-	bool addmode(char mode);
-	void delmode(int mode) { _modes &= ~mode; }
-	bool delmode(char mode);
+	bool addmode(int mode) { if(_modes & mode) return false; _modes |= mode; return true; }
+	bool delmode(int mode) { if(!(_modes & mode)) return false; _modes &= ~mode; return true; }
 	int modes() const { return _modes; }
 
 	const std::string& nick() const { return _nick; }
@@ -50,8 +50,8 @@ public:
 	const std::string& host() const { return _host; }
 	const std::string& realname() const { return _realname; }
 
-	bool passworded() const { return _modes & MODE_PASSWORDED; }
-	bool registered() const { return _modes & MODE_REGISTERED; }
+	bool passworded() const { return _modes & USER_PASSWORDED; }
+	bool registered() const { return _modes & USER_REGISTERED; }
 	bool isoper() const { return _modes & MODE_O; }
 
 	std::time_t lastping() const { return _lastping; }

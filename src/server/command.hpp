@@ -17,7 +17,8 @@ namespace Command {
 		PONG,
 		CAP,
 		OPER,
-		MODE
+		MODE,
+		JOIN
 	};
 	// struct Prefix
 	// {

@@ -15,6 +15,7 @@ namespace net
 		Address& operator=(const Address& other);
 
 		Address(in_addr addr, uint16 port);
+		Address(in_addr_t addr, uint16 port);
 		Address(const sockaddr* addr);
 		Address(const char* ip, uint16 port); // For numeric addresses
 		Address(const char* addr, const char* port, sockettype type = none); // For dns lookup

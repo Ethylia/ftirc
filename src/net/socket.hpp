@@ -15,7 +15,6 @@ namespace net
 		Socket();
 		Socket(sockettype type);
 
-
 		~Socket();
 
 		operator const int&() const { return _sockfd; }

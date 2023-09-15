@@ -29,7 +29,7 @@ namespace net
 
 	bool Socket::create(sockettype type)
 	{
-		_sockfd = socket(ADDRFAMILIES[ipv4], SOCKTYPES[type], ((type == tcp) ? IPPROTO_TCP : IPPROTO_UDP));
+		_sockfd = socket(ADDRFAMILIES[all], SOCKTYPES[type], ((type == tcp) ? IPPROTO_TCP : IPPROTO_UDP));
 		if(_sockfd == -1)
 			return perror("socket"), false;
 		int e = fcntl(_sockfd, F_SETFL, O_NONBLOCK);
@@ -63,7 +63,7 @@ namespace net
 			return false;
 		const int opt = 1;
 		setsockopt(_sockfd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(int));
-		if(::bind(_sockfd, a, SOCKSIZES[a.af()]) == 0)
+		if(::bind(_sockfd, a, a.size()) == 0)
 			_bound = true;
 		else
 			perror("bind");
@@ -72,7 +72,7 @@ namespace net
 
 	bool Socket::connect(const Address& addr)
 	{
-		if(::connect(_sockfd, addr, SOCKSIZES[addr.af()]) == 0)
+		if(::connect(_sockfd, addr, addr.size()) == 0)
 		{
 			_connected = true;
 			_bound = true;

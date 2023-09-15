@@ -2,7 +2,7 @@
 
 #include <netinet/in.h>
 
-#define LOOPBACK {INADDR_LOOPBACK}
+#define LOOPBACK INADDR_LOOPBACK
 #define IPV6LOOPBACK {IN6ADDR_LOOPBACK_INIT}
 #define INITADDR {INADDR_ANY}
 #define IPV6INITADDR {IN6ADDR_ANY_INIT}
@@ -12,10 +12,11 @@ namespace net
 	enum addrfamily
 	{
 		invalid = 0,
-		ipv4
+		ipv4,
+		all
 	};
 
-	const char* const ADDRFAMILYSTRINGS[] = {"Invalid", "IPv4"};
+	const char* const ADDRFAMILYSTRINGS[] = {"Invalid", "IPv4", "All"};
 
 	enum sockettype
 	{

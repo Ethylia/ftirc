@@ -1,6 +1,7 @@
 #include "server.hpp"
 
 #include <iostream>
+#include <netdb.h>
 
 #include "net/address.hpp"
 
@@ -9,6 +10,7 @@ const std::string Server::NAME = "localhost";
 time_t Server::_currenttime = 0;
 uint16 Server::_port = 8080;
 std::string Server::_password;
+std::string Server::_host = "supercoolircserver.irc";
 const std::string Server::_oppassword = "oppass";
 net::Socket Server::_asocket;
 Client* Server::_newclient = 0;
@@ -130,6 +132,21 @@ void Server::disconnect(uint64 id)
 	_pollfds.erase(_pollfds.begin() + id);
 }
 
+Channel* Server::channel(const std::string& name)
+{
+	for(uint64 i = 0; i < _channels.size(); ++i)
+		if(_channels[i]->getChannelName() == name)
+			return _channels[i];
+	return 0;
+}
+
+Channel* Server::createChannel(const std::string& name, Client* user)
+{
+	Channel* c = new Channel(name, user);
+	_channels.push_back(c);
+	return c;
+}
+
 bool Server::broadcast(const std::string& data, const Client* except)
 {
 	for(uint64 i = 1; i < _clients.size(); ++i)
@@ -177,6 +194,8 @@ void Server::shutdown()
 	_newclient = 0;
 	for(uint64 i = 1; i < _clients.size(); ++i)
 		delete _clients[i];
+	for(uint64 i = 0; i < _channels.size(); ++i)
+		delete _channels[i];
 	_clients.clear();
 }
 
