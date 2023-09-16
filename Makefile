@@ -6,7 +6,8 @@ SRC		=	main.cpp \
 			server/server.cpp \
 			server/client.cpp \
 			server/command.cpp \
-			server/irccommands.cpp
+			server/irccommands.cpp \
+			server/channel.cpp
 
 OBJ_DIR	=	obj
 OBJ		=	$(addprefix $(OBJ_DIR)/,$(SRC:.cpp=.o))

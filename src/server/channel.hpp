@@ -9,14 +9,18 @@ class Channel
 {
 public:
 	Channel(std::string channelName, Client* user);
-	~Channel();
+	~Channel() {}
+
+	static const char* const CHANMODES;
 
 	enum
 	{
 		MODE_INVITE_ONLY = 1 << 0,
 		MODE_TOPIC_PROTECTED = 1 << 1,
 		MODE_LIMIT_USERS = 1 << 2,
-		MODE_KEY_REQUIRED = 1 << 3
+		MODE_KEY_REQUIRED = 1 << 3,
+		MODE_OP = 1 << 4,
+		MODE_UNKNOWN = 1 << 5
 	};
 
 	const std::string& getChannelName() const { return _channelName; }
@@ -37,6 +41,14 @@ public:
 
 	bool inviteUser(Client* op, Client* userTarget); // INVITE user #channelName
 	bool kickUser(Client* op, Client* userTarget, std::string reason = ""); // KICK #channelName user :reason
+
+	bool setMode(int mode) { if(_modes & mode) return false; _modes |= mode; return true; }
+	bool unsetMode(int mode) { if(!(_modes & mode)) return false; _modes |= mode; return true; }
+
+	bool setUserLimit(const std::string& limit);
+	bool unsetUserLimit() { if(_maxUsers == 0) return false; _maxUsers = 0; _modes &= ~MODE_LIMIT_USERS; return true; }
+	bool setKey(const std::string& key) { if(_modes & MODE_KEY_REQUIRED) return false; _key = key; _modes |= MODE_KEY_REQUIRED; return true;}
+	bool unsetKey() { if(!(_modes & MODE_KEY_REQUIRED)) return false; _key.clear(); _modes &= ~MODE_KEY_REQUIRED; return true; }
 
 private:
 

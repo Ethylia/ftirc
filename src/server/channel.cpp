@@ -1,13 +1,18 @@
 #include "channel.hpp"
 
+#include <sstream>
+
+const char* const Channel::CHANMODES = "itlko";
+
 Channel::Channel(std::string channelName, Client* user)
 {
 	_channelName = channelName;
 	_channelOperators.push_back(user);
 	_topic = "";
+	_modes = 0;
 }
 
-bool Channel::addUser(Client* user, std::string key = "")
+bool Channel::addUser(Client* user, std::string key)
 {
 	if(isUserInChannel(user))
 		return false;
@@ -46,6 +51,7 @@ bool Channel::removeUser(Client* user)
 			break;
 		}
 	}
+	return true;
 }
 
 bool Channel::isUserInChannel(Client* user) const
@@ -70,7 +76,7 @@ bool Channel::isUserChannelOperator(Client* user) const
 
 bool Channel::addChannelOperator(Client* op, Client* userTarget)
 {
-	if(!op->isoper() && (!isUserInChannel(userTarget) || !isUserChannelOperator(op)))
+	if(!userTarget || (!op->isoper() && (!isUserInChannel(userTarget) || !isUserChannelOperator(op))))
 		return false;
 	_channelOperators.push_back(userTarget);
 	return true;
@@ -78,7 +84,7 @@ bool Channel::addChannelOperator(Client* op, Client* userTarget)
 
 bool Channel::removeChannelOperator(Client* op, Client* userTarget)
 {
-	if(!isUserInChannel(userTarget) || !isUserChannelOperator(op) || !isUserChannelOperator(userTarget))
+	if(!userTarget || (!isUserInChannel(userTarget) || !isUserChannelOperator(op) || !isUserChannelOperator(userTarget)))
 		return false;
 	for(std::vector<Client*>::iterator it = _channelOperators.begin(); it != _channelOperators.end(); ++it)
 	{
@@ -103,8 +109,6 @@ bool Channel::setTopic(Client* user, std::string topic)
 
 bool Channel::sendChannelMessage(Client* user, std::string message)
 {
-	if(!isUserInChannel(user))
-		return false;
 	for(std::vector<Client*>::iterator it = _userList.begin(); it != _userList.end(); ++it)
 	{
 		if(*it != user)
@@ -123,7 +127,7 @@ bool Channel::inviteUser(Client* op, Client* userTarget)
 	return true;
 }
 
-bool Channel::kickUser(Client* op, Client* userTarget, std::string reason = "")
+bool Channel::kickUser(Client* op, Client* userTarget, std::string reason)
 {
 	if(!isUserChannelOperator(op) || !isUserInChannel(userTarget))
 		return false;
@@ -132,5 +136,20 @@ bool Channel::kickUser(Client* op, Client* userTarget, std::string reason = "")
 		userTarget->send(":" + op->nick() + "!" + op->user() + "@" + op->host() + " KICK " + _channelName + " " + userTarget->nick() + "\r\n");
 	else
 		userTarget->send(":" + op->nick() + "!" + op->user() + "@" + op->host() + " KICK " + _channelName + " " + userTarget->nick() + " :" + reason + "\r\n");
+	return true;
+}
+
+bool Channel::setUserLimit(const std::string& limit)
+{
+	if(_modes & MODE_LIMIT_USERS)
+		return false;
+	std::stringstream ss(limit);
+	ss >> _maxUsers;
+	if(ss.fail() || !ss.eof())
+	{
+		_maxUsers = 0;
+		return false;
+	}
+	_modes |= MODE_LIMIT_USERS;
 	return true;
 }

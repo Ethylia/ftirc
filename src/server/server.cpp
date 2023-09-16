@@ -16,6 +16,7 @@ net::Socket Server::_asocket;
 Client* Server::_newclient = 0;
 std::vector<Client*> Server::_clients;
 std::vector<pollfd> Server::_pollfds;
+std::vector<Channel*> Server::_channels;
 
 const uint32 Server::_QUEUE_SIZE = 64;
 

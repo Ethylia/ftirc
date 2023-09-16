@@ -29,7 +29,7 @@ namespace net
 
 	bool Socket::create(sockettype type)
 	{
-		_sockfd = socket(ADDRFAMILIES[all], SOCKTYPES[type], ((type == tcp) ? IPPROTO_TCP : IPPROTO_UDP));
+		_sockfd = socket(ADDRFAMILIES[ipv4], SOCKTYPES[type], ((type == tcp) ? IPPROTO_TCP : IPPROTO_UDP));
 		if(_sockfd == -1)
 			return perror("socket"), false;
 		int e = fcntl(_sockfd, F_SETFL, O_NONBLOCK);

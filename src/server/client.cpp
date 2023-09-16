@@ -76,7 +76,8 @@ bool Client::ping()
 {
 	_lastpinged = Server::currenttime();
 	std::cout << "Pinging client" << std::endl;
-	return _socket.send("PING 123\r\n", 10);
+	std::string msg = "PING " + Server::host() + "\r\n";
+	return _socket.send(msg.c_str(), msg.size());
 }
 
 bool Client::password(const std::string& pass)

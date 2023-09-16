@@ -78,16 +78,30 @@ namespace Command
 		return true;
 	}
 
-	bool privmsg(const Command& command, Client* client)
+	bool privmsgToChannel(const Command& command, Client* client)
 	{
-		// check parameters numbers
-		if(command.params.size() < 2)
+		// check if channel exists
+		Channel* msgTarget = Server::channel(command.params[0]);
+		if(!msgTarget)
 		{
-			client->send("ERROR :Not enough parameters\r\n");
+			client->send("ERROR :No such channel\r\n");
 			return false;
 		}
+		// check if client is in channel
+		if(!msgTarget->isUserInChannel(client))
+		{
+			client->send("ERROR :You're not in that channel\r\n");
+			return false;
+		}
+		// send message
+		msgTarget->sendChannelMessage(client, command.params[1]);
+		return true;
+	}
+
+	bool privmsgToUser(const Command& command, Client* client)
+	{
 		// check msgReceiver
-		const Client* const msgTarget = Server::client(command.params[0]);
+		Client* msgTarget = Server::client(command.params[0]);
 		if(!msgTarget)
 		{
 			client->send("ERROR :No such nick\r\n");
@@ -103,6 +117,22 @@ namespace Command
 
 		msgTarget->send(msg.c_str());
 		return true;
+	}
+
+	bool privmsg(const Command& command, Client* client)
+	{
+		// check parameters numbers
+		if(command.params.size() < 2)
+		{
+			client->send("ERROR :Not enough parameters\r\n");
+			return false;
+		}
+		// check msgTarget is channel or user
+		std::string channelPrefixes = "#&+!";
+		if(channelPrefixes.find(command.params[0][0]) == std::string::npos)
+			return privmsgToUser(command, client);
+		else
+			return privmsgToChannel(command, client);
 	}
 
 	bool quit(const Command& command, Client* client)
@@ -166,11 +196,129 @@ namespace Command
 		return Client::MODE_UNKNOWN;
 	}
 
+	static int parseChanMode(char mode)
+	{
+		for(size_t i = 0; i < std::char_traits<char>::length(Channel::CHANMODES); ++i)
+			if(mode == Channel::CHANMODES[i])
+				return 1 << i;
+		return Channel::MODE_UNKNOWN;
+	}
+
+	bool chanMode(const Command& command, Client* client)
+	{
+		if(command.params.size() < 2)
+			return false;
+		// check if the channel exists
+		Channel* channel = Server::channel(command.params[0]);
+		if(!channel)
+		{
+			client->send("ERROR :No such channel\r\n");
+			return false;
+		}
+		if(!channel->isUserChannelOperator(client))
+		{
+			client->send("ERROR :You're not a channel operator\r\n");
+			return false;
+		}
+		// parse the modes
+		size_t i = 0;
+		size_t argi = 2;
+		if(command.params[1][0] != '+' && command.params[1][0] != '-')
+			return false;
+		std::string modestr;
+		std::string argstr;
+		bool unknown = false;
+		while(i < command.params[1].size())
+		{
+			size_t j;
+			modestr += command.params[1][i];
+			for(j = i + 1; command.params[1][j] && command.params[1][j] != '+' && command.params[1][j] != '-'; ++j)
+			{
+				int r = parseChanMode(command.params[1][j]);
+				if(r == Channel::MODE_UNKNOWN)
+					unknown = true;
+				else if(command.params[1][i] == '+')
+				{
+					switch(r)
+					{
+					case Channel::MODE_OP:
+						if(command.params.size() <= argi)
+							break;
+						if(!channel->addChannelOperator(client, Server::client(command.params[argi++])))
+							break;
+						modestr += command.params[1][j];
+						argstr += command.params[argi - 1] + " ";
+						break;
+					case Channel::MODE_INVITE_ONLY:
+					case Channel::MODE_TOPIC_PROTECTED:
+						if(channel->setMode(r))
+							modestr += command.params[1][j];
+						break;
+					case Channel::MODE_LIMIT_USERS:
+						if(!channel->setUserLimit(command.params[argi++]))
+							break;
+						modestr += command.params[1][j];
+						argstr += command.params[argi - 1] + " ";
+						break;
+					case Channel::MODE_KEY_REQUIRED:
+						if(!channel->setKey(command.params[argi++]))
+							break;
+						modestr += command.params[1][j];
+						argstr += command.params[argi - 1] + " ";
+						break;
+					}
+				}
+				else if(command.params[1][i] == '-')
+				{
+					switch(r)
+					{
+					case Channel::MODE_OP:
+						if(command.params.size() <= argi)
+							break;
+						if(!channel->removeChannelOperator(client, Server::client(command.params[argi++])))
+						{
+							client->send("ERROR: No such channel operator\r\n");
+							break;
+						}
+						modestr += command.params[1][j];
+						argstr += command.params[argi - 1] + " ";
+						break;
+					case Channel::MODE_INVITE_ONLY:
+					case Channel::MODE_TOPIC_PROTECTED:
+						if(channel->unsetMode(r))
+							modestr += command.params[1][j];
+						break;
+					case Channel::MODE_LIMIT_USERS:
+						if(channel->unsetUserLimit())
+							modestr += command.params[1][j];
+						break;
+					case Channel::MODE_KEY_REQUIRED:
+						if(channel->unsetMode(r))
+							modestr += command.params[1][j];
+						break;
+					}
+				}
+			}
+			i = j;
+		}
+		// send a message if there were any unknown modes
+		if(unknown)
+			client->send("501 " + client->nick() + " :Unknown MODE flag\r\n");
+		// send a MODE message if there were any modes changed
+		if(modestr.find_first_not_of("+-") != std::string::npos)
+		{
+			channel->sendChannelMessage(client, ":" + client->nick() + " MODE " + channel->getChannelName() + " " + modestr + " " + argstr + "\r\n");
+			client->send(":" + Server::host() + " MODE " + channel->getChannelName() + " " + modestr + " " + argstr + "\r\n");
+		}
+
+		return true;
+	}
+
 	bool mode(const Command& command, Client* client)
 	{
 		if(command.params.size() < 2)
 			return false;
-		
+
 		if(command.params[0][0] != '#')
 		{ // if the first parameter is not a channel, it's a user
 			Client* target = Server::client(command.params[0]);
@@ -179,12 +327,18 @@ namespace Command
 				client->send("ERROR :No such nick\r\n");
 				return false;
 			}
+			if(!target->isoper() && target != client)
+			{ // only oper can change other clients' modes
+				client->send("481 " + client->nick() + " :Permission Denied- You're not an IRC operator\r\n");
+				return false;
+			}
 			// parse the modes
 			size_t i = 0;
 			if(command.params[1][0] != '+' && command.params[1][0] != '-')
 				return false;
 			std::string modestr;
 			bool unknown = false;
+			bool perm = false;
 			while(i < command.params[1].size())
 			{
 				size_t j;
@@ -192,7 +346,9 @@ namespace Command
 				for(j = i + 1; command.params[1][j] && command.params[1][j] != '+' && command.params[1][j] != '-'; ++j)
 				{
 					int r = parseMode(command.params[1][j]);
-					if(r == Client::MODE_UNKNOWN)
+					if(r == Client::MODE_O && !client->isoper())
+						perm = true;
+					else if(r == Client::MODE_UNKNOWN)
 						unknown = true;
 					else if(command.params[1][i] == '+' && client->addmode(r))
 						modestr += command.params[1][j];
@@ -202,13 +358,19 @@ namespace Command
 				i = j;
 			}
 			// send a message if there were any unknown modes
+			(void)perm;
+			if(perm)
+				client->send("481 " + client->nick() + " :Permission Denied- You're not an IRC operator\r\n");
 			if(unknown)
 				client->send("501 " + client->nick() + " :Unknown MODE flag\r\n");
 			// send a MODE message if there were any modes changed
 			if(modestr.find_first_not_of("+-") != std::string::npos)
 				client->send(":" + Server::host() + " MODE " + target->nick() + " " + modestr + "\r\n");
+
+			return true;
 		}
-		return true;
+		else
+			return chanMode(command, client);
 	}
 
 	bool join(const Command& command, Client* client)
@@ -217,7 +379,7 @@ namespace Command
 			return false;
 		// check if the channel name is valid
 		std::string channelPrefixes = "#&+!";
-		if(command.params[0].size() > 1 || channelPrefixes.find(command.params[0][0]) == std::string::npos)
+		if(command.params[0].size() <= 1 || channelPrefixes.find(command.params[0][0]) == std::string::npos)
 		{
 			client->send("ERROR :Invalid channel name\r\n");
 			return false;
@@ -233,7 +395,15 @@ namespace Command
 				return false;
 			}
 		}
-		channel->addUser(client);
+		if(command.params.size() > 1)
+		{
+			if(!channel->addUser(client, command.params[1]))
+				return false;
+		}
+		else
+			if(!channel->addUser(client))
+				return false;
+		
 		client->send("JOIN " + channel->getChannelName() + "\r\n");
 		return true;
 	}
