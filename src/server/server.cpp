@@ -4,7 +4,7 @@
 #include <netdb.h>
 
 const std::string Server::VERSION = "0.1";
-const std::string Server::NAME = "localhost";
+const std::string Server::NAME = "supercoolircserver";
 time_t Server::_currenttime = 0;
 uint16 Server::_port = 8080;
 std::string Server::_password;
@@ -72,7 +72,6 @@ bool Server::run()
 		if((r = poll(_pollfds.data(), _pollfds.size(), 1000)) < 0 || _pollfds[0].revents & (POLLERR | POLLNVAL))
 			return false;
 
-		// std::cout << "Poll returned" << std::endl;
 		_currenttime = std::time(NULL); // we only need to update this once per loop
 
 		checkTimeouts();
@@ -107,7 +106,6 @@ bool Server::accept()
 		pfd.revents = 0;
 		_pollfds.push_back(pfd);
 		_newclient = new Client();
-		std::cout << "Client connected" << std::endl;
 		return true;
 	}
 	std::cerr << "Failed to accept client" << std::endl;
@@ -124,7 +122,6 @@ bool Server::receive(uint64 id)
 void Server::disconnect(uint64 id)
 {
 	receive(id); // receive any remaining data
-	std::cout << "Client disconnected" << std::endl;
 	delete _clients[id];
 	_clients.erase(_clients.begin() + id);
 	_pollfds.erase(_pollfds.begin() + id);

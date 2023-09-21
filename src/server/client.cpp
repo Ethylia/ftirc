@@ -50,8 +50,6 @@ bool Client::receive()
 		_data += buffer;
 	} while((r = _socket.receive(buffer, 1023)) > 0);
 
-	std::cout << "Received: " << _data << std::endl;
-
 	size_t pos;
 	while((pos = _data.find("\r\n")) != std::string::npos)
 	{ // execute all complete commands
@@ -75,7 +73,6 @@ bool Client::oper(const std::string& user, const std::string& pass)
 bool Client::ping()
 {
 	_lastpinged = Server::currenttime();
-	std::cout << "Pinging client" << std::endl;
 	std::string msg = "PING " + Server::host() + "\r\n";
 	return _socket.send(msg.c_str(), msg.size());
 }
@@ -101,8 +98,6 @@ bool Client::setuser(const std::string& user, const std::string& realname)
 		return false;
 	if(user.size() > 9)
 		return false;
-
-	// if () {} // Check hostname too?
 	
 	_user = user;
 	_realname = realname;

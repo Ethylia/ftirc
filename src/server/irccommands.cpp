@@ -318,7 +318,8 @@ namespace Command
 		if(command.params.size() < 2)
 			return false;
 
-		if(command.params[0][0] != '#')
+		const std::string channelPrefixes = "#&+!";
+		if(channelPrefixes.find(command.params[0][0]) == std::string::npos)
 		{ // if the first parameter is not a channel, it's a user
 			Client* target = Server::client(command.params[0]);
 			if(!target)
@@ -379,12 +380,13 @@ namespace Command
 		if(command.params.size() < 1)
 			return false;
 		// check if the channel name is valid
-		std::string channelPrefixes = "#&+!";
+		const std::string channelPrefixes = "#&+!";
 		if(command.params[0].size() <= 1 || channelPrefixes.find(command.params[0][0]) == std::string::npos)
 		{
 			client->send("ERROR :Invalid channel name\r\n");
 			return false;
 		}
+		bool created = false;
 		// check if the channel exists
 		Channel* channel = Server::channel(command.params[0]);
 		if(!channel)
@@ -395,6 +397,7 @@ namespace Command
 				client->send("ERROR :Channel creation failed\r\n");
 				return false;
 			}
+			created = true;
 		}
 		if(command.params.size() > 1)
 		{
@@ -407,6 +410,8 @@ namespace Command
 		
 		channel->sendChannelCommand(0, client->prefix() + " JOIN :" + channel->getChannelName() + "\r\n");
 		channel->sendUserList(client);
+		if(created)
+			channel->sendChannelCommand(0, client->prefix() + " MODE " + channel->getChannelName() + " +o " + client->nick() + "\r\n");
 		return true;
 	}
 
