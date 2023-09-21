@@ -1,6 +1,5 @@
 SRC_DIR	=	src
 SRC		=	main.cpp \
-			net/address.cpp \
 			net/socket.cpp \
 			net/net.cpp \
 			server/server.cpp \
@@ -52,4 +51,4 @@ re: fclean all
 rwildcard=$(foreach d,$(wildcard $(1:=/*)),$(call rwildcard,$d,$2) $(filter $(subst *,%,$2),$d))
 
 # -include $(OBJ_DIR)/*.d
--include $(call rwildcard,$(OBJ_DIR),*.d)
+-include $(OBJ:.o=.d)

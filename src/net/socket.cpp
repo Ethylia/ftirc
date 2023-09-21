@@ -1,8 +1,6 @@
 #include "socket.hpp"
 
 #include <unistd.h>
-//#include <netdb.h>
-//#include <arpa/inet.h>
 #include <netinet/in.h>
 #include <sys/socket.h>
 #include <ifaddrs.h>
@@ -49,37 +47,10 @@ namespace net
 		saddr.sin_port = htons(port);
 		saddr.sin_addr = addr;
 		saddr.sin_family = AF_INET;
-		const int opt = 1;
-		setsockopt(_sockfd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(int));
+		setoption<int>(SO_REUSEADDR, SOL_SOCKET, 1);
 		if(::bind(_sockfd, reinterpret_cast<sockaddr*>(&saddr), sizeof(sockaddr_in)) == 0)
 			_bound = true;
-		else
-			perror("bind");
 		return _bound;
-	}
-	bool Socket::bind(const Address& a)
-	{
-		if(_bound)
-			return false;
-		const int opt = 1;
-		setsockopt(_sockfd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(int));
-		if(::bind(_sockfd, a, a.size()) == 0)
-			_bound = true;
-		else
-			perror("bind");
-		return _bound;
-	}
-
-	bool Socket::connect(const Address& addr)
-	{
-		if(::connect(_sockfd, addr, addr.size()) == 0)
-		{
-			_connected = true;
-			_bound = true;
-			return true;
-		}
-		perror("connect");
-		return false;
 	}
 
 	bool Socket::send(const char* data, uint32 size) const
@@ -87,10 +58,6 @@ namespace net
 		if(!_connected || !valid())
 			return false;
 		return ::send(_sockfd, data, size, 0) != -1;
-	}
-	void Socket::sendto(const byte* data, uint32 size, const Address& addr)
-	{
-		::sendto(_sockfd, data, size, 0, addr, addr.size());
 	}
 
 	ssize_t Socket::receive(void* data, uint32 size)

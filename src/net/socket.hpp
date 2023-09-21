@@ -5,7 +5,6 @@
 
 #include "net.hpp"
 #include "common.hpp"
-#include "address.hpp"
 
 namespace net
 {
@@ -26,11 +25,8 @@ namespace net
 
 		bool create(sockettype type);
 		bool bind(in_addr addr, uint16 port);
-		bool bind(const Address& a);
 //		bool bind(in6_addr addr, uint16 port) const;
-		bool connect(const Address& addr);
 		bool send(const char* data, uint32 size) const;
-		void sendto(const byte* data, uint32 size, const Address& addr);
 		ssize_t receive(void* data, uint32 size);
 		bool listen(uint32 backlog);
 		bool accept(const Socket& as);

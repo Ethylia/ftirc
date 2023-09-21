@@ -3,8 +3,6 @@
 #include <iostream>
 #include <netdb.h>
 
-#include "net/address.hpp"
-
 const std::string Server::VERSION = "0.1";
 const std::string Server::NAME = "localhost";
 time_t Server::_currenttime = 0;
