@@ -37,10 +37,11 @@ public:
 	bool removeChannelOperator(Client* op, Client* userTarget); // MODE -o
 
 	bool setTopic(Client* user, std::string topic); // TOPIC #channelName :topic
+	bool getTopic(Client* user) const;
 	bool sendChannelMessage(Client* user, std::string message); // PRIVMSG #channelName :message
+	bool sendChannelCommand(Client* user, std::string command); // sends message without any prefix or changes
 
 	bool inviteUser(Client* op, Client* userTarget); // INVITE user #channelName
-	bool kickUser(Client* op, Client* userTarget, std::string reason = ""); // KICK #channelName user :reason
 
 	bool setMode(int mode) { if(_modes & mode) return false; _modes |= mode; return true; }
 	bool unsetMode(int mode) { if(!(_modes & mode)) return false; _modes |= mode; return true; }
@@ -49,6 +50,8 @@ public:
 	bool unsetUserLimit() { if(_maxUsers == 0) return false; _maxUsers = 0; _modes &= ~MODE_LIMIT_USERS; return true; }
 	bool setKey(const std::string& key) { if(_modes & MODE_KEY_REQUIRED) return false; _key = key; _modes |= MODE_KEY_REQUIRED; return true;}
 	bool unsetKey() { if(!(_modes & MODE_KEY_REQUIRED)) return false; _key.clear(); _modes &= ~MODE_KEY_REQUIRED; return true; }
+
+	bool sendUserList(Client* user) const; // RPL_NAMREPLY
 
 private:
 
@@ -61,5 +64,7 @@ private:
 
 	size_t _maxUsers;
 	std::string _topic;
+	std::string _topicUser;
+	time_t _topicTime;
 	std::string _key;
 };

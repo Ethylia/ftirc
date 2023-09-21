@@ -33,13 +33,13 @@ public:
 	bool send(const char* data, uint32 size) const;
 	bool send(const std::string& data) const;
 	bool ping();
-	bool sendmodes(const std::string& added, const std::string& removed) const;
+	// bool sendmodes(const std::string& added, const std::string& removed) const;
 
 	const std::string& data() const { return _data; }
 
 	bool password(const std::string& pass);
 	bool setnick(const std::string& nick);
-	bool setuser(const std::string& user, const std::string& host, const std::string& realname);
+	bool setuser(const std::string& user, const std::string& realname);
 	bool oper(const std::string& user, const std::string& pass);
 	bool addmode(int mode) { if(_modes & mode) return false; _modes |= mode; return true; }
 	bool delmode(int mode) { if(!(_modes & mode)) return false; _modes &= ~mode; return true; }
@@ -47,8 +47,9 @@ public:
 
 	const std::string& nick() const { return _nick; }
 	const std::string& user() const { return _user; }
-	const std::string& host() const { return _host; }
 	const std::string& realname() const { return _realname; }
+
+	std::string prefix() const;
 
 	bool passworded() const { return _modes & USER_PASSWORDED; }
 	bool registered() const { return _modes & USER_REGISTERED; }
@@ -69,7 +70,6 @@ private:
 
 	std::string _nick;
 	std::string _user;
-	std::string _host;
 	std::string _realname;
 
 	std::string _data;

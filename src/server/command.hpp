@@ -18,7 +18,11 @@ namespace Command {
 		CAP,
 		OPER,
 		MODE,
-		JOIN
+		JOIN,
+		KICK,
+		INVITE,
+		TOPIC,
+		PART
 	};
 	// struct Prefix
 	// {

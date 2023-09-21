@@ -15,4 +15,8 @@ namespace Command
 	bool oper(const Command& command, Client* client);
 	bool mode(const Command& command, Client* client);
 	bool join(const Command& command, Client* client);
+	bool kick(const Command& command, Client* client);
+	bool invite(const Command& command, Client* client);
+	bool topic(const Command& command, Client* client);
+	bool part(const Command& command, Client* client);
 }

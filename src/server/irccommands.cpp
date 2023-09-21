@@ -58,7 +58,7 @@ namespace Command
 			return false;
 		}
 		// set user
-		if(!client->setuser(command.params[0], command.params[1], command.params[3]))
+		if(!client->setuser(command.params[0], command.params[3]))
 		{
 			client->send("ERROR :Invalid username\r\n");
 			return false;
@@ -71,7 +71,6 @@ namespace Command
 		client->send("002 " + client->nick() + " :Your host is " + Server::NAME + ", running version " + Server::VERSION + "\r\n");
 		client->send("003 " + client->nick() + " :This server was created sometime ago" + "\r\n");
 		client->send("004 " + client->nick() + " " + Server::NAME + "-" + Server::VERSION + " " + "o o" + "\r\n");
-		client->send("005 " + client->nick() + " PREFIX=(ov)@+ CHANTYPES=# CHANMODES=,,," + ":are supported by this server\r\n");
 
 		client->send("251 " + client->nick() + " :There are " + clientCount + " users and 0 services on 1 server\r\n");
 
@@ -113,7 +112,7 @@ namespace Command
 			return false;
 		}
 		// send message
-		std::string msg = ":" + client->nick() + "!" + client->user() + "@" + client->host() + " PRIVMSG " + msgTarget->nick() + ((command.params[1][0] == ':') ? " " : " :") + command.params[1] + "\r\n";
+		std::string msg = client->prefix() + " PRIVMSG " + msgTarget->nick() + ((command.params[1][0] == ':') ? " " : " :") + command.params[1] + "\r\n";
 
 		msgTarget->send(msg.c_str());
 		return true;
@@ -182,7 +181,7 @@ namespace Command
 			return false;
 		}
 
-		client->send(":" + client->host() + " MODE " + client->nick() + " :+o\r\n");
+		client->send(":" + Server::host() + " MODE " + client->nick() + " :+o\r\n");
 		client->send("381 " + client->nick() + " :You are now an IRC operator\r\n");
 
 		return true;
@@ -357,15 +356,17 @@ namespace Command
 				}
 				i = j;
 			}
-			// send a message if there were any unknown modes
-			(void)perm;
+			// send a message if there were any unknown modes or permission error
 			if(perm)
 				client->send("481 " + client->nick() + " :Permission Denied- You're not an IRC operator\r\n");
 			if(unknown)
 				client->send("501 " + client->nick() + " :Unknown MODE flag\r\n");
 			// send a MODE message if there were any modes changed
 			if(modestr.find_first_not_of("+-") != std::string::npos)
-				client->send(":" + Server::host() + " MODE " + target->nick() + " " + modestr + "\r\n");
+			{
+				target->send(client->prefix() + " MODE " + target->nick() + " " + modestr + "\r\n");
+				client->send(client->prefix() + " MODE " + target->nick() + " " + modestr + "\r\n");
+			}
 
 			return true;
 		}
@@ -404,7 +405,151 @@ namespace Command
 			if(!channel->addUser(client))
 				return false;
 		
-		client->send("JOIN " + channel->getChannelName() + "\r\n");
+		channel->sendChannelCommand(0, client->prefix() + " JOIN :" + channel->getChannelName() + "\r\n");
+		channel->sendUserList(client);
+		return true;
+	}
+
+	bool kick(const Command& command, Client* client)
+	{
+		if(command.params.size() < 2)
+			return false;
+		// check if the channel exists
+		Channel* channel = Server::channel(command.params[0]);
+		if(!channel)
+		{
+			client->send("ERROR :No such channel\r\n");
+			return false;
+		}
+		if(!client->isoper())
+		{
+			if(!channel->isUserInChannel(client))
+			{
+				client->send("ERROR :You're not in that channel\r\n");
+				return false;
+			}
+			if(!channel->isUserChannelOperator(client))
+			{
+				client->send("ERROR :You're not a channel operator\r\n");
+				return false;
+			}
+		}
+		// check if the user exists
+		Client* target = Server::client(command.params[1]);
+		if(!target)
+		{
+			client->send("ERROR :No such nick\r\n");
+			return false;
+		}
+		if(!channel->isUserInChannel(target))
+		{
+			client->send("ERROR :User is not in that channel\r\n");
+			return false;
+		}
+		// kick the user
+		if(command.params.size() > 2)
+			channel->sendChannelCommand(0, client->prefix() + " KICK " + channel->getChannelName() + " " + target->nick() + " :" + command.params[2] + "\r\n");
+		else
+			channel->sendChannelCommand(0, client->prefix() + " KICK " + channel->getChannelName() + " " + target->nick() + "\r\n");
+		channel->removeUser(target);
+		return true;
+	}
+
+	bool invite(const Command& command, Client* client)
+	{
+		if(command.params.size() < 2)
+			return false;
+		// check if the channel exists
+		Channel* channel = Server::channel(command.params[1]);
+		if(!channel)
+		{
+			client->send("ERROR :No such channel\r\n");
+			return false;
+		}
+		if(!client->isoper())
+		{
+			if(!channel->isUserInChannel(client))
+			{
+				client->send("ERROR :You're not in that channel\r\n");
+				return false;
+			}
+			if(!channel->isUserChannelOperator(client))
+			{
+				client->send("ERROR :You're not a channel operator\r\n");
+				return false;
+			}
+		}
+		// check if the user exists
+		Client* target = Server::client(command.params[0]);
+		if(!target)
+		{
+			client->send("ERROR :No such nick\r\n");
+			return false;
+		}
+		if(channel->isUserInChannel(target))
+		{
+			client->send("ERROR :User is already in that channel\r\n");
+			return false;
+		}
+		// invite the user
+		channel->inviteUser(client, target);
+		return true;
+	}
+
+	bool topic(const Command& command, Client* client)
+	{
+		if(command.params.size() < 1)
+			return false;
+		// check if the channel exists
+		Channel* channel = Server::channel(command.params[0]);
+		if(!channel)
+		{
+			client->send("ERROR :No such channel\r\n");
+			return false;
+		}
+		if(!client->isoper())
+		{
+			if(!channel->isUserInChannel(client))
+			{
+				client->send("ERROR :You're not in that channel\r\n");
+				return false;
+			}
+			if(!channel->isUserChannelOperator(client) && command.params.size() > 1)
+			{
+				client->send("ERROR :You're not a channel operator\r\n");
+				return false;
+			}
+		}
+		// set the topic
+		if(command.params.size() > 1)
+			channel->setTopic(client, command.params[1]);
+		else
+			channel->getTopic(client);
+		return true;
+	}
+
+	bool part(const Command& command, Client* client)
+	{
+		if(command.params.size() < 1)
+			return false;
+		// check if the channel exists
+		Channel* channel = Server::channel(command.params[0]);
+		if(!channel)
+		{
+			client->send("ERROR :No such channel\r\n");
+			return false;
+		}
+		if(!channel->isUserInChannel(client))
+		{
+			client->send("ERROR :You're not in that channel\r\n");
+			return false;
+		}
+		// part the channel
+		if(command.params.size() > 1)
+			channel->sendChannelCommand(0, client->prefix() + " PART " + channel->getChannelName() + " :" + command.params[1] + "\r\n");
+		else
+			channel->sendChannelCommand(0, client->prefix() + " PART " + channel->getChannelName() + "\r\n");
+		channel->removeUser(client);
 		return true;
 	}
 }

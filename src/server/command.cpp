@@ -9,7 +9,11 @@ namespace Command
 	{
 		Command cmd;
 		cmd.type = UNKNOWN;
-		const char* const cmdList[] = {"PASS", "NICK", "USER", "PRIVMSG", "QUIT", "PING", "PONG", "CAP", "OPER", "MODE", "JOIN"};
+		const char* const cmdList[] = \
+			{"PASS", "NICK", "USER", "PRIVMSG",
+			"QUIT", "PING", "PONG", "CAP", "OPER",
+			"MODE", "JOIN", "KICK", "INVITE", "TOPIC",
+			"PART"};
 
 		if(command.empty())
 			return false;
@@ -49,7 +53,11 @@ namespace Command
 
 	bool execute(const Command& command, Client* client)
 	{
-		bool (* const cmdList[])(const Command&, Client*) = {0, pass, nick, user, privmsg, quit, ping, pong, cap, oper, mode, join};
+		bool (* const cmdList[])(const Command&, Client*) = \
+			{0, pass, nick, user, privmsg,
+			quit, ping, pong, cap, oper, mode,
+			join, kick, invite, topic, part};
+
 		if(!client->registered() && command.type != CAP)
 		{
 			if(client->passworded())

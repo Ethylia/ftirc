@@ -75,14 +75,13 @@ bool Server::run()
 			return false;
 
 		// std::cout << "Poll returned" << std::endl;
-		_currenttime = std::time(0);
+		_currenttime = std::time(NULL); // we only need to update this once per loop
 
-		for(uint64 i = 1; i < _clients.size(); ++i)
-			if(_currenttime - _clients[i]->lastping() > 70 && _clients[i]->lastpinged() <= _clients[i]->lastping())
-				_clients[i]->ping();
+		checkTimeouts();
 
+		// if poll times out it returns 0, we don't need to check for any events in that case
 		if(r)
-		{ // only if poll didn't timeout and actually returned events
+		{
 			if(_pollfds[0].revents & POLLIN)
 				accept();
 
@@ -210,4 +209,15 @@ bool Server::sendUserList(const Client* client)
 	}
 	msg += "\r\n";
 	return client->send(msg.c_str(), msg.size());
+}
+
+void Server::checkTimeouts()
+{
+	for(uint64 i = 1; i < _clients.size(); ++i)
+	{
+		if(_currenttime - _clients[i]->lastping() > 70 && _clients[i]->lastpinged() <= _clients[i]->lastping())
+			_clients[i]->ping();
+		else if(_currenttime - _clients[i]->lastping() > 120)
+			_clients[i]->flagDisconnect = true;
+	}
 }
