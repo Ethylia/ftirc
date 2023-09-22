@@ -71,6 +71,7 @@ namespace Command
 		client->send("002 " + client->nick() + " :Your host is " + Server::NAME + ", running version " + Server::VERSION + "\r\n");
 		client->send("003 " + client->nick() + " :This server was created sometime ago" + "\r\n");
 		client->send("004 " + client->nick() + " " + Server::NAME + "-" + Server::VERSION + " " + "o o" + "\r\n");
+		client->send("005 " + client->nick() + " PREFIX=(o)@ CHANTYPES=# CHANMODES=,k,l,it :are supported by this server\r\n");
 
 		client->send("251 " + client->nick() + " :There are " + clientCount + " users and 0 services on 1 server\r\n");
 
@@ -177,12 +178,12 @@ namespace Command
 
 		if(!client->oper(command.params[0], command.params[1]))
 		{
-			client->send(":" + Server::host() + " 491" + client->nick() + " :Invalid oper credentials\r\n");
+			client->send(":" + Server::host() + " 491 " + client->nick() + " :Invalid oper credentials\r\n");
 			return false;
 		}
 
-		client->send(":" + Server::host() + " MODE " + client->nick() + " :+o\r\n");
-		client->send("381 " + client->nick() + " :You are now an IRC operator\r\n");
+		client->send(client->prefix() + " MODE " + client->nick() + " :+o\r\n");
+		client->send(":" + Server::host() + " 381 " + client->nick() + " :You are now an IRC operator\r\n");
 
 		return true;
 	}
@@ -214,7 +215,7 @@ namespace Command
 			client->send("ERROR :No such channel\r\n");
 			return false;
 		}
-		if(!channel->isUserChannelOperator(client))
+		if(!client->isoper() && !channel->isUserChannelOperator(client))
 		{
 			client->send("ERROR :You're not a channel operator\r\n");
 			return false;
@@ -366,7 +367,8 @@ namespace Command
 			if(modestr.find_first_not_of("+-") != std::string::npos)
 			{
 				target->send(client->prefix() + " MODE " + target->nick() + " " + modestr + "\r\n");
-				client->send(client->prefix() + " MODE " + target->nick() + " " + modestr + "\r\n");
+				if(target != client)
+					client->send(client->prefix() + " MODE " + target->nick() + " " + modestr + "\r\n");
 			}
 
 			return true;
@@ -519,7 +521,7 @@ namespace Command
 				client->send("ERROR :You're not in that channel\r\n");
 				return false;
 			}
-			if(!channel->isUserChannelOperator(client) && command.params.size() > 1)
+			if(!channel->isUserChannelOperator(client) && command.params.size() > 1 && channel->getMode(Channel::MODE_TOPIC_PROTECTED))
 			{
 				client->send("ERROR :You're not a channel operator\r\n");
 				return false;

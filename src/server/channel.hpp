@@ -44,7 +44,8 @@ public:
 	bool inviteUser(Client* op, Client* userTarget); // INVITE user #channelName
 
 	bool setMode(int mode) { if(_modes & mode) return false; _modes |= mode; return true; }
-	bool unsetMode(int mode) { if(!(_modes & mode)) return false; _modes |= mode; return true; }
+	bool unsetMode(int mode) { if(!(_modes & mode)) return false; _modes &= ~mode; return true; }
+	bool getMode(int mode) { return _modes & mode; }
 
 	bool setUserLimit(const std::string& limit);
 	bool unsetUserLimit() { if(_maxUsers == 0) return false; _maxUsers = 0; _modes &= ~MODE_LIMIT_USERS; return true; }

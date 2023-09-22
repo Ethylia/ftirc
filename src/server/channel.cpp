@@ -75,7 +75,7 @@ bool Channel::isUserChannelOperator(Client* user) const
 
 bool Channel::addChannelOperator(Client* op, Client* userTarget)
 {
-	if(!userTarget || (!op->isoper() && (!isUserInChannel(userTarget) || !isUserChannelOperator(op))))
+	if(!userTarget || isUserChannelOperator(userTarget) ||(!op->isoper() && (!isUserInChannel(userTarget) || !isUserChannelOperator(op))))
 		return false;
 	_channelOperators.push_back(userTarget);
 	return true;
