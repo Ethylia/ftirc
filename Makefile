@@ -20,7 +20,8 @@ LDFLAGS =	-Wall -Wextra -Werror
 
 all:		$(NAME)
 
-debug: CFLAGS += -g3 -DDEBUG
+debug: CFLAGS += -g -DDEBUG
+debug: LDFLAGS += -g
 debug: re
 
 noerr: CFLAGS += -Wno-error
